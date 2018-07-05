@@ -1,0 +1,3 @@
+# Do not include pycache or .pyc files
+__pycache__/
+*.pyc
