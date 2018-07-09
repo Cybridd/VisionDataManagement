@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.setFixedSize(1068, 710)
+        MainWindow.resize(1068, 710)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.dataframe = QtWidgets.QFrame(self.centralwidget)
@@ -28,7 +28,6 @@ class Ui_MainWindow(object):
         self.label.setGeometry(QtCore.QRect(210, 10, 341, 211))
         self.label.setText("")
         self.label.setObjectName("label")
-        self.label.raise_()
         self.scrubframe = QtWidgets.QFrame(self.dataframe)
         self.scrubframe.setGeometry(QtCore.QRect(10, 480, 751, 161))
         self.scrubframe.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -53,6 +52,7 @@ class Ui_MainWindow(object):
         self.browseButton.setObjectName("browseButton")
         self.webcamButton = QtWidgets.QPushButton(self.buttonframe)
         self.webcamButton.setGeometry(QtCore.QRect(70, 10, 75, 23))
+        self.webcamButton.setCheckable(True)
         self.webcamButton.setObjectName("webcamButton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -71,3 +71,4 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.browseButton.setText(_translate("MainWindow", "..."))
         self.webcamButton.setText(_translate("MainWindow", "WebCam"))
+

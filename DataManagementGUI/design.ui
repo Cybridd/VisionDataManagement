@@ -57,8 +57,6 @@
        <string/>
       </property>
      </widget>
-     <zorder>scrubframe</zorder>
-     <zorder>label</zorder>
     </widget>
     <widget class="QFrame" name="scrubframe">
      <property name="geometry">
@@ -145,6 +143,9 @@
      </property>
      <property name="text">
       <string>WebCam</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
