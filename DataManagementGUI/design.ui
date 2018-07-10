@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1068</width>
-    <height>710</height>
+    <width>1920</width>
+    <height>1080</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Vision Data Management</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QFrame" name="dataframe">
@@ -25,12 +25,12 @@
      <rect>
       <x>9</x>
       <y>9</y>
-      <width>771</width>
-      <height>651</height>
+      <width>1611</width>
+      <height>1021</height>
      </rect>
     </property>
     <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
+     <enum>QFrame::NoFrame</enum>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
@@ -39,9 +39,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
-       <width>751</width>
-       <height>461</height>
+       <y>0</y>
+       <width>1601</width>
+       <height>851</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -53,11 +53,46 @@
      <widget class="QLabel" name="label">
       <property name="geometry">
        <rect>
-        <x>210</x>
-        <y>10</y>
-        <width>341</width>
-        <height>211</height>
+        <x>560</x>
+        <y>30</y>
+        <width>480</width>
+        <height>360</height>
        </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="focallabel">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>430</y>
+        <width>480</width>
+        <height>360</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="corticallabel">
+      <property name="geometry">
+       <rect>
+        <x>930</x>
+        <y>430</y>
+        <width>480</width>
+        <height>360</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
       <property name="text">
        <string/>
@@ -68,8 +103,8 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>480</y>
-       <width>751</width>
+       <y>850</y>
+       <width>1601</width>
        <height>161</height>
       </rect>
      </property>
@@ -82,9 +117,9 @@
      <widget class="QSlider" name="scrubSlider">
       <property name="geometry">
        <rect>
-        <x>-1</x>
+        <x>9</x>
         <y>10</y>
-        <width>701</width>
+        <width>1541</width>
         <height>22</height>
        </rect>
       </property>
@@ -95,7 +130,7 @@
      <widget class="QLCDNumber" name="frameNum">
       <property name="geometry">
        <rect>
-        <x>710</x>
+        <x>1560</x>
         <y>10</y>
         <width>31</width>
         <height>23</height>
@@ -111,7 +146,7 @@
      <widget class="QPushButton" name="pauseButton">
       <property name="geometry">
        <rect>
-        <x>310</x>
+        <x>770</x>
         <y>40</y>
         <width>75</width>
         <height>23</height>
@@ -129,10 +164,10 @@
    <widget class="QFrame" name="buttonframe">
     <property name="geometry">
      <rect>
-      <x>788</x>
-      <y>9</y>
+      <x>1630</x>
+      <y>10</y>
       <width>271</width>
-      <height>651</height>
+      <height>1011</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -186,7 +221,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1068</width>
+     <width>1920</width>
      <height>21</height>
     </rect>
    </property>
