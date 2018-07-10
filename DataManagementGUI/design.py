@@ -12,6 +12,11 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1068, 710)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
+        MainWindow.setSizePolicy(sizePolicy)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.dataframe = QtWidgets.QFrame(self.centralwidget)
@@ -42,6 +47,10 @@ class Ui_MainWindow(object):
         self.frameNum.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.frameNum.setSmallDecimalPoint(False)
         self.frameNum.setObjectName("frameNum")
+        self.pauseButton = QtWidgets.QPushButton(self.scrubframe)
+        self.pauseButton.setGeometry(QtCore.QRect(310, 40, 75, 23))
+        self.pauseButton.setCheckable(True)
+        self.pauseButton.setObjectName("pauseButton")
         self.buttonframe = QtWidgets.QFrame(self.centralwidget)
         self.buttonframe.setGeometry(QtCore.QRect(788, 9, 271, 651))
         self.buttonframe.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -53,6 +62,9 @@ class Ui_MainWindow(object):
         self.webcamButton = QtWidgets.QPushButton(self.buttonframe)
         self.webcamButton.setGeometry(QtCore.QRect(70, 10, 75, 23))
         self.webcamButton.setCheckable(True)
+        self.webcamButton.setChecked(False)
+        self.webcamButton.setAutoRepeat(False)
+        self.webcamButton.setDefault(False)
         self.webcamButton.setObjectName("webcamButton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -69,6 +81,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.pauseButton.setText(_translate("MainWindow", "Pause"))
         self.browseButton.setText(_translate("MainWindow", "..."))
         self.webcamButton.setText(_translate("MainWindow", "WebCam"))
 
