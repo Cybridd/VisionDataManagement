@@ -214,6 +214,19 @@
       <bool>false</bool>
      </property>
     </widget>
+    <widget class="QCheckBox" name="retinaButton">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>10</y>
+       <width>71</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Retina</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

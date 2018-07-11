@@ -77,6 +77,9 @@ class Ui_MainWindow(object):
         self.webcamButton.setAutoRepeat(False)
         self.webcamButton.setDefault(False)
         self.webcamButton.setObjectName("webcamButton")
+        self.retinaButton = QtWidgets.QCheckBox(self.buttonframe)
+        self.retinaButton.setGeometry(QtCore.QRect(170, 10, 71, 21))
+        self.retinaButton.setObjectName("retinaButton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1920, 21))
@@ -95,4 +98,5 @@ class Ui_MainWindow(object):
         self.pauseButton.setText(_translate("MainWindow", "Pause"))
         self.browseButton.setText(_translate("MainWindow", "..."))
         self.webcamButton.setText(_translate("MainWindow", "WebCam"))
+        self.retinaButton.setText(_translate("MainWindow", "Retina"))
 

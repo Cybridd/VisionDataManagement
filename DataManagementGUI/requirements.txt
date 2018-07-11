@@ -1,0 +1,18 @@
+backports.functools-lru-cache==1.5
+cycler==0.10.0
+ez-setup==0.9
+kiwisolver==1.0.1
+matplotlib==2.2.2
+numpy==1.14.3
+opencv-python==3.4.1.15
+Pillow==5.2.0
+pyee==5.0.0
+pyparsing==2.2.0
+python-dateutil==2.7.3
+python-qt5==0.3.0
+pytz==2018.4
+qtmodern==0.1.4
+QtPy==1.4.2
+-e git+https://github.com/Pozimek/RetinaVision@2bb86f4f23161e9a924028b408b99eb33e344a5b#egg=retinavision
+scipy==1.1.0
+six==1.11.0
