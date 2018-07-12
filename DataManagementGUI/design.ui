@@ -20,147 +20,6 @@
    <string>Vision Data Management</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QFrame" name="dataframe">
-    <property name="geometry">
-     <rect>
-      <x>9</x>
-      <y>9</y>
-      <width>1611</width>
-      <height>1021</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::NoFrame</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Raised</enum>
-    </property>
-    <widget class="QFrame" name="videoframe">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>0</y>
-       <width>1601</width>
-       <height>851</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <widget class="QLabel" name="label">
-      <property name="geometry">
-       <rect>
-        <x>560</x>
-        <y>30</y>
-        <width>480</width>
-        <height>360</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QLabel" name="focallabel">
-      <property name="geometry">
-       <rect>
-        <x>200</x>
-        <y>430</y>
-        <width>480</width>
-        <height>360</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QLabel" name="corticallabel">
-      <property name="geometry">
-       <rect>
-        <x>930</x>
-        <y>430</y>
-        <width>480</width>
-        <height>360</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </widget>
-    <widget class="QFrame" name="scrubframe">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>850</y>
-       <width>1601</width>
-       <height>161</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <widget class="QSlider" name="scrubSlider">
-      <property name="geometry">
-       <rect>
-        <x>9</x>
-        <y>10</y>
-        <width>1541</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-     <widget class="QLCDNumber" name="frameNum">
-      <property name="geometry">
-       <rect>
-        <x>1560</x>
-        <y>10</y>
-        <width>31</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Sunken</enum>
-      </property>
-      <property name="smallDecimalPoint">
-       <bool>false</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pauseButton">
-      <property name="geometry">
-       <rect>
-        <x>770</x>
-        <y>40</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Pause</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </widget>
-   </widget>
    <widget class="QFrame" name="buttonframe">
     <property name="geometry">
      <rect>
@@ -226,6 +85,653 @@
      <property name="text">
       <string>Retina</string>
      </property>
+    </widget>
+   </widget>
+   <widget class="QTabWidget" name="maintabWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>1611</width>
+      <height>1021</height>
+     </rect>
+    </property>
+    <property name="tabPosition">
+     <enum>QTabWidget::North</enum>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
+    <widget class="QWidget" name="mainpage" native="true">
+     <attribute name="title">
+      <string>Main</string>
+     </attribute>
+     <widget class="QFrame" name="dataframe">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1611</width>
+        <height>1011</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QFrame" name="videoframe">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>0</y>
+         <width>1601</width>
+         <height>851</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>560</x>
+          <y>30</y>
+          <width>480</width>
+          <height>360</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="focallabel">
+        <property name="geometry">
+         <rect>
+          <x>200</x>
+          <y>430</y>
+          <width>480</width>
+          <height>360</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="corticallabel">
+        <property name="geometry">
+         <rect>
+          <x>930</x>
+          <y>430</y>
+          <width>480</width>
+          <height>360</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QFrame" name="scrubframe">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>850</y>
+         <width>1611</width>
+         <height>161</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <widget class="QSlider" name="scrubSlider">
+        <property name="geometry">
+         <rect>
+          <x>19</x>
+          <y>10</y>
+          <width>1531</width>
+          <height>22</height>
+         </rect>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="frameNum">
+        <property name="geometry">
+         <rect>
+          <x>1560</x>
+          <y>10</y>
+          <width>31</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="smallDecimalPoint">
+         <bool>false</bool>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pauseButton">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>40</y>
+          <width>75</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Pause</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="gallerypage">
+     <attribute name="title">
+      <string>Gallery</string>
+     </attribute>
+     <widget class="QFrame" name="dataframe_2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1621</width>
+        <height>1011</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QFrame" name="videoframe_4">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>0</y>
+         <width>1531</width>
+         <height>1001</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <widget class="QLabel" name="label0_8">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>10</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label0_9">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>10</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label0_10">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>10</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label0_11">
+        <property name="geometry">
+         <rect>
+          <x>1120</x>
+          <y>10</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label1_8">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>250</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label1_9">
+        <property name="geometry">
+         <rect>
+          <x>1120</x>
+          <y>250</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label1_10">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>250</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label1_11">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>250</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label2_8">
+        <property name="geometry">
+         <rect>
+          <x>1120</x>
+          <y>490</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label2_9">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>490</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label2_10">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>490</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label2_11">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>490</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label3_8">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>730</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label3_9">
+        <property name="geometry">
+         <rect>
+          <x>70</x>
+          <y>730</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label3_10">
+        <property name="geometry">
+         <rect>
+          <x>1120</x>
+          <y>730</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label3_11">
+        <property name="geometry">
+         <rect>
+          <x>420</x>
+          <y>730</y>
+          <width>320</width>
+          <height>180</height>
+         </rect>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num0_8">
+        <property name="geometry">
+         <rect>
+          <x>200</x>
+          <y>200</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num0_9">
+        <property name="geometry">
+         <rect>
+          <x>550</x>
+          <y>200</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num0_10">
+        <property name="geometry">
+         <rect>
+          <x>900</x>
+          <y>200</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num0_11">
+        <property name="geometry">
+         <rect>
+          <x>1250</x>
+          <y>200</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num1_8">
+        <property name="geometry">
+         <rect>
+          <x>1250</x>
+          <y>440</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num1_9">
+        <property name="geometry">
+         <rect>
+          <x>200</x>
+          <y>440</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num1_10">
+        <property name="geometry">
+         <rect>
+          <x>550</x>
+          <y>440</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num1_11">
+        <property name="geometry">
+         <rect>
+          <x>900</x>
+          <y>440</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num2_8">
+        <property name="geometry">
+         <rect>
+          <x>550</x>
+          <y>680</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num2_9">
+        <property name="geometry">
+         <rect>
+          <x>200</x>
+          <y>680</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num2_10">
+        <property name="geometry">
+         <rect>
+          <x>900</x>
+          <y>680</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num2_11">
+        <property name="geometry">
+         <rect>
+          <x>1250</x>
+          <y>680</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num3_8">
+        <property name="geometry">
+         <rect>
+          <x>900</x>
+          <y>920</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num3_9">
+        <property name="geometry">
+         <rect>
+          <x>550</x>
+          <y>920</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num3_10">
+        <property name="geometry">
+         <rect>
+          <x>1250</x>
+          <y>920</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLCDNumber" name="num3_11">
+        <property name="geometry">
+         <rect>
+          <x>200</x>
+          <y>920</y>
+          <width>61</width>
+          <height>23</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QFrame" name="scrubframe_4">
+       <property name="geometry">
+        <rect>
+         <x>1540</x>
+         <y>0</y>
+         <width>81</width>
+         <height>1001</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <widget class="QSlider" name="verticalSlider_3">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>10</y>
+          <width>22</width>
+          <height>951</height>
+         </rect>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="invertedAppearance">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </widget>
+     </widget>
     </widget>
    </widget>
   </widget>

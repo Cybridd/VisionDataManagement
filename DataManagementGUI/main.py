@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 import os
 import design
+import galleryview
 import numpy as np
 import cv2
 import threading
