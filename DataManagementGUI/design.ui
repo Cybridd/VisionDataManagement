@@ -40,21 +40,21 @@
       <rect>
        <x>20</x>
        <y>10</y>
-       <width>21</width>
-       <height>23</height>
+       <width>81</width>
+       <height>31</height>
       </rect>
      </property>
      <property name="text">
-      <string>...</string>
+      <string>Open File</string>
      </property>
     </widget>
     <widget class="QPushButton" name="webcamButton">
      <property name="geometry">
       <rect>
-       <x>70</x>
-       <y>10</y>
-       <width>75</width>
-       <height>23</height>
+       <x>20</x>
+       <y>50</y>
+       <width>81</width>
+       <height>31</height>
       </rect>
      </property>
      <property name="text">
@@ -76,14 +76,110 @@
     <widget class="QCheckBox" name="retinaButton">
      <property name="geometry">
       <rect>
-       <x>170</x>
-       <y>10</y>
-       <width>71</width>
-       <height>21</height>
+       <x>150</x>
+       <y>50</y>
+       <width>81</width>
+       <height>31</height>
       </rect>
      </property>
      <property name="text">
       <string>Retina</string>
+     </property>
+    </widget>
+    <widget class="QTableView" name="metadata">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>271</y>
+       <width>211</width>
+       <height>191</height>
+      </rect>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="showGrid">
+      <bool>false</bool>
+     </property>
+     <property name="gridStyle">
+      <enum>Qt::SolidLine</enum>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="cornerButtonEnabled">
+      <bool>false</bool>
+     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="browseFolderButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>10</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Open Folder</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="deleteButton">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>470</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="saveButton">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>470</y>
+       <width>81</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Save</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="exportCSVButton">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>960</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Export as CSV</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="exportHDF5Button">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>960</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Export as HDF5</string>
      </property>
     </widget>
    </widget>
@@ -100,9 +196,9 @@
      <enum>QTabWidget::North</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
-    <widget class="QWidget" name="mainpage" native="true">
+    <widget class="QWidget" name="mainpage">
      <attribute name="title">
       <string>Main</string>
      </attribute>
@@ -209,6 +305,9 @@
           <height>22</height>
          </rect>
         </property>
+        <property name="tracking">
+         <bool>false</bool>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -246,6 +345,27 @@
         </property>
        </widget>
       </widget>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="focuspage">
+     <attribute name="title">
+      <string>Focus</string>
+     </attribute>
+     <widget class="QLabel" name="biglabel">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>140</y>
+        <width>1280</width>
+        <height>720</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="gallerypage">
