@@ -13,6 +13,7 @@ from os.path import join
 from retinavision.retina import Retina
 from retinavision.cortex import Cortex
 from retinavision import utils
+from model import Image as im, Video as vid
 from QtCore import QThread, pyqtSignal, Qt, QTimer
 from QtGui import QImage, QPixmap, QStandardItem
 from QtWidgets import QApplication, QMainWindow, QInputDialog, QFileDialog, QWidget, QMessageBox
@@ -22,6 +23,7 @@ from qtmodern import styles, windows
 
 class VideoPlayer(QWidget):
 
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     videoName = None
     videoFrame = None
     focalFrame = None
@@ -41,6 +43,7 @@ class VideoPlayer(QWidget):
     def __init__(self,fileName,fileType,isRetinaEnabled,parent):
         super(QWidget,self).__init__()
         self.videoName = fileName
+        print(self.videoName)
         self.parent = parent
         if self.videoName:
             self.cap = cv2.VideoCapture(self.videoName)
@@ -105,10 +108,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     fileName = None
     datadir = None
+    currentFile = None
     metaFileName = None
     metadatamodel = None
     fileType = None
-    timer = None
     posFile = None
     videoPlayer = None
     isRetinaEnabled = False
@@ -136,9 +139,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         if fileName:
             print("Opening " + fileName)
             if filetype in mediafiletypes:
-                self.fileName = fileName
-                self.fileType = filetype
-                self.startVideoPlayer()
+                self.currentFile = vid.Video(filepath=fileName,palette="rgb")
+                #self.fileName = fileName
+                #self.fileType = filetype
+                #self.startVideoPlayer()
             elif filetype in metadatatypes:
                 self.metaFileName = fileName
                 self.fileType = filetype
@@ -149,7 +153,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def openFolderDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        datadir = QFileDialog.getExistingDirectory(None, "Open folder")
+        datadir = QFileDialog.getExistingDirectory(self, "Open folder")
         if datadir:
             print("Directory opened:" + datadir)
 
