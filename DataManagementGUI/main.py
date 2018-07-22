@@ -23,8 +23,7 @@ from qtmodern import styles, windows
 
 class VideoPlayer(QWidget):
 
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    videoName = None
+    video = None
     videoFrame = None
     focalFrame = None
     corticalFrame = None
@@ -40,18 +39,21 @@ class VideoPlayer(QWidget):
         'avi': 'xvid'
     }
 
-    def __init__(self,fileName,fileType,isRetinaEnabled,parent):
+    def __init__(self,video,isRetinaEnabled,parent):
         super(QWidget,self).__init__()
-        self.videoName = fileName
-        print(self.videoName)
         self.parent = parent
-        if self.videoName:
-            self.cap = cv2.VideoCapture(self.videoName)
-            self.setCodec(fileType)
+        self.video = video
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.nextFrame)
+        if self.video:
+            self.cap = cv2.VideoCapture(self.video.filepath)
+            codec = cv2.VideoWriter_fourcc(*self.filetypes[self.video.type])
+            self.cap.set(cv2.CAP_PROP_FOURCC, codec)
             self.maxFrames = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
             self.parent.scrubSlider.setRange(0,self.maxFrames)
         else:
             self.cap = cv2.VideoCapture(0)
+            self.timer.start(1000.0/30)
         self.videoFrame = parent.label
         self.focalFrame = parent.focallabel
         self.corticalFrame = parent.corticallabel
@@ -61,62 +63,73 @@ class VideoPlayer(QWidget):
             self.retina, self.fixation = ImageProcessing.startRetina(self.cap)
             self.cortex = ImageProcessing.createCortex()
 
-    def setCodec(self,filetype):
-        codec = cv2.VideoWriter_fourcc(*self.filetypes[filetype])
-        self.cap.set(cv2.CAP_PROP_FOURCC, codec)
 
     def nextFrame(self):
         ret, frame = self.cap.read()
         if ret:
-            framePos = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.videoFrame.setPixmap(self.convertToPixmap(frame, 480, 360))
+            self.framePos = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+            self.videoFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 480, 360))
             if self.retina:
                 v = self.retina.sample(frame,self.fixation)
                 tight = self.retina.backproject_last()
                 cortical = self.cortex.cort_img(v)
-                self.focalFrame.setPixmap(self.convertToPixmap(tight, 480, 360))
-                self.corticalFrame.setPixmap(self.convertToPixmap(cortical, 480, 360))
-                self.focusFrame.setPixmap(self.convertToPixmap(cortical, 1280, 720))
+                self.focalFrame.setPixmap(ImageProcessing.convertToPixmap(tight, 480, 360))
+                self.corticalFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 480, 360))
+                self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 1280, 720))
             else:
-                self.focusFrame.setPixmap(self.convertToPixmap(frame, 1280, 720))
-            self.parent.scrubSlider.setValue(framePos)
-            self.parent.frameNum.display(framePos)
-
-    def convertToPixmap(self, frame, x, y):
-        rgbImage = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
-        converttoQtFormat = QImage(rgbImage.data,rgbImage.shape[1],rgbImage.shape[0],QImage.Format_RGB888)
-        pic = converttoQtFormat.scaled(x,y,Qt.KeepAspectRatio)
-        pixmap = QPixmap.fromImage(pic)
-        return pixmap
+                self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 1280, 720))
+            #self.updateDisplay()
 
     def start(self):
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.nextFrame)
         self.timer.start(1000.0/30)
+        self.parent.startButton.setDisabled(True)
+        self.parent.startButton_2.setDisabled(True)
+        self.parent.pauseButton.setDisabled(False)
+        self.parent.pauseButton_2.setDisabled(False)
 
-    def pause(self, event):
-        if event:
-            self.timer.stop()
-        else:
-            self.timer.start()
+    def pause(self):
+        self.timer.stop()
+        self.parent.pauseButton.setDisabled(True)
+        self.parent.pauseButton_2.setDisabled(True)
+        self.parent.startButton.setDisabled(False)
+        self.parent.startButton_2.setDisabled(False)
 
     def skip(self, framePos):
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, framePos)
-        self.parent.frameNum.display(framePos)
+        self.framePos = framePos
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
+        #self.updateDisplay()
+
+    def skipBck(self):
+        self.framePos = self.framePos - 1
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
+        #self.updateDisplay()
+
+    def skipFwd(self):
+        self.framePos = self.framePos + 1
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
+        #self.updateDisplay()
+
+    def updateDisplay(self):
+        self.parent.scrubSlider.setValue(self.framePos)
+        self.parent.scrubSlider_2.setValue(self.framePos)
+        self.parent.frameNum.display(self.framePos)
+        self.parent.frameNum_2.display(self.framePos)
 
 class DMApp(QMainWindow, design.Ui_MainWindow):
 
+    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     fileName = None
-    datadir = None
+    currentDir = None
     currentFile = None
+    currentFrames = None
     metaFileName = None
     metadatamodel = None
     fileType = None
     posFile = None
     videoPlayer = None
     isRetinaEnabled = False
-    #isPosFileLoaded = False
-    #isVideoLoaded = False
+    videofiletypes = {'mp4','avi'}
+    metadatatypes = {'csv','json'}
 
     def __init__(self,parent=None):
         super(DMApp,self).__init__(parent)
@@ -125,11 +138,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.browseButton.clicked.connect(self.openFileNameDialog)
         self.browseFolderButton.clicked.connect(self.openFolderDialog)
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
+        self.generateButton.clicked.connect(self.getVideoFrames)
         self.maintabWidget.setCurrentIndex(0)
 
     def openFileNameDialog(self):
-        mediafiletypes = {'mp4','avi','jpg'}
-        metadatatypes = {'csv','json'}
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self,"Open file", "",
@@ -138,12 +150,12 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         filetype = fileName.split('.')[-1]
         if fileName:
             print("Opening " + fileName)
-            if filetype in mediafiletypes:
+            self.infoLabel.setText("File opened: " + fileName)
+            if filetype in self.videofiletypes:
                 self.currentFile = vid.Video(filepath=fileName,palette="rgb")
-                #self.fileName = fileName
-                #self.fileType = filetype
-                #self.startVideoPlayer()
-            elif filetype in metadatatypes:
+                self.generateButton.setDisabled(False)
+                self.startVideoPlayer()
+            elif filetype in self.metadatatypes:
                 self.metaFileName = fileName
                 self.fileType = filetype
                 self.loadMetaData()
@@ -156,6 +168,13 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         datadir = QFileDialog.getExistingDirectory(self, "Open folder")
         if datadir:
             print("Directory opened:" + datadir)
+            self.currentDir = datadir
+            self.currentFrames = ImageProcessing.createImagesFromFolder(self.currentDir)
+            self.maintabWidget.setCurrentIndex(2)
+            self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
+            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+            self.fillGallery()
+
 
     def loadMetaData(self):
         self.metadatamodel = QtGui.QStandardItemModel(self)
@@ -170,6 +189,16 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadatamodel.appendRow(items)
         self.metadata.setModel(self.metadatamodel)
 
+    def getVideoFrames(self):
+        if self.currentFile:
+            self.currentFile.getFrames()
+            self.currentFrames = self.currentFile.frames
+            self.generateButton.setText("Done!")
+            self.maintabWidget.setCurrentIndex(2)
+            self.verticalSlider_3.setRange(0,self.currentFile.numFrames/16)
+            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+            self.generateButton.setDisabled(True)
+            self.fillGallery()
 
     #Not currently in use
     def saveFileDialog(self):
@@ -186,11 +215,17 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.isRetinaEnabled = False
 
     def startVideoPlayer(self):
-        #if not self.videoPlayer and self.isVideoLoaded:
-        self.videoPlayer = VideoPlayer(self.fileName,self.fileType,self.isRetinaEnabled, self)
-        self.pauseButton.clicked[bool].connect(self.videoPlayer.pause)
+        self.videoPlayer = VideoPlayer(self.currentFile,self.isRetinaEnabled,self)
+        self.pauseButton.clicked.connect(self.videoPlayer.pause)
+        self.startButton.clicked.connect(self.videoPlayer.start)
+        self.skipBackButton.clicked.connect(self.videoPlayer.skipBck)
+        self.skipForwardButton.clicked.connect(self.videoPlayer.skipFwd)
         self.scrubSlider.valueChanged.connect(self.sendFramePos)
-        self.videoPlayer.start()
+        self.pauseButton_2.clicked.connect(self.videoPlayer.pause)
+        self.startButton_2.clicked.connect(self.videoPlayer.start)
+        self.skipBackButton_2.clicked.connect(self.videoPlayer.skipBck)
+        self.skipForwardButton_2.clicked.connect(self.videoPlayer.skipFwd)
+        self.scrubSlider_2.valueChanged.connect(self.sendFramePos)
 
     def sendFramePos(self):
         framePos = self.scrubSlider.value()
@@ -198,8 +233,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def runWebCam(self, event):
         if event:
-            self.fileName = 0
-            self.isVideoLoaded = True
+            self.currentFile = 0
             self.startVideoPlayer()
             self.browseButton.setDisabled(True)
             self.browseFolderButton.setDisabled(True)
@@ -208,8 +242,13 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.videoPlayer = None
             self.browseButton.setDisabled(False)
 
-    def getGalleryWidgets(self):
-        labels = self.dataframe_2.findChildren(QLabel)
+    def fillGallery(self):
+        labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
+        for index, label in enumerate(labels):
+            label.setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[index + (index * self.verticalSlider_3.value())].image,320,180))
+        numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
+        for index, number in enumerate(numbers):
+            number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].frameNum)
 
     def showWarning(self, error):
         errormessage = QMessageBox()
@@ -224,9 +263,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 def main():
     app = QApplication(sys.argv)
     form = DMApp()
-    qtmodern.styles.dark(app)
-    mw = qtmodern.windows.ModernWindow(form)
-    mw.show()
+    #qtmodern.styles.dark(app)
+    #mw = qtmodern.windows.ModernWindow(form)
+    #mw.show()
+    form.show()
     app.exec_()
 
 if __name__ == '__main__':

@@ -1,3 +1,7 @@
 # Do not include pycache or .pyc files
 __pycache__/
 *.pyc
+
+# Do not include temporary test files
+test.py
+model/test.py

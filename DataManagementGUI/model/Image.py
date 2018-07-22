@@ -15,7 +15,7 @@ class Image(object):
         self.image = image
         if filepath:
             self.name = filepath.split("/")[-1]
-            self.type = fileName.split('.')[-1]
+            self.type = filepath.split('.')[-1]
         self.filepath = filepath
         self.parent = parent
         self.frameNum = frameNum

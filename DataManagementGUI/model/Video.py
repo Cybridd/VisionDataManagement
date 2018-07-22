@@ -19,15 +19,15 @@ class Video(object):
         self.filepath = filepath
         self.type = filepath.split('.')[-1]
         self.palette = palette
-        self.frames = None # fill these on load?
+        self.frames = None # don't fill these on load, takes to long without threading
         self.numFrames = None
 
     def getFrames(self):
         self.cap = cv2.VideoCapture(self.filepath)
         codec = cv2.VideoWriter_fourcc(*self.filetypes[self.type])
         self.cap.set(cv2.CAP_PROP_FOURCC, codec)
-        numFrames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.frames = [0] * numFrames
+        self.numFrames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.frames = [0] * self.numFrames
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             if ret:
