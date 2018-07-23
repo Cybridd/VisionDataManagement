@@ -36,6 +36,7 @@ class Video(object):
             else:
                 break
         print("Images are now in memory at self.frames. Save them to disk by calling a version of saveFrames")
+        return self.frames
 
     def saveFramesImageOnly(self):
         #out = cv2.VideoWriter()

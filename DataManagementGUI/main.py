@@ -1,25 +1,51 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
+import sys, traceback
 import os
 import design
-import ImageProcessing
-import numpy as np
-import csv
 import cv2
-import threading
 import time
-import qtmodern
+import ImageProcessing
 from os.path import join
-from retinavision.retina import Retina
-from retinavision.cortex import Cortex
-from retinavision import utils
 from model import Image as im, Video as vid
-from QtCore import QThread, pyqtSignal, Qt, QTimer
-from QtGui import QImage, QPixmap, QStandardItem
-from QtWidgets import QApplication, QMainWindow, QInputDialog, QFileDialog, QWidget, QMessageBox
-from qtmodern import styles, windows
+from PyQt5 import QtCore, QtGui, QtWidgets
+from QtCore import *#QThread, pyqtSignal, Qt, QTimer, QObject, QRunnable
+from QtGui import *#QImage, QPixmap, QStandardItem
+from QtWidgets import *#QApplication, QMainWindow, QInputDialog, QFileDialog, QWidget, QMessageBox
 
-#TODO metadata editing, deleting files, ImageProcessing class, export for DCNN
+#TODO metadata editing, deleting files, export for DCNN,
+# Give to Worker - Image/Video object creation, image saving/exporting, display updating
+
+class WorkerSignals(QObject):
+
+    finished = pyqtSignal()
+    error = pyqtSignal(tuple)
+    result = pyqtSignal(object)
+    progress = pyqtSignal(int)
+
+class Worker(QRunnable):
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+        self.kwargs['progress_callback'] = self.signals.progress
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            start = time.time()
+            result = self.fn(*self.args)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            end = time.time()
+            print("This operation required " + (end - start) + " seconds.")
+            self.signals.finished.emit()
 
 class VideoPlayer(QWidget):
 
@@ -68,17 +94,7 @@ class VideoPlayer(QWidget):
         ret, frame = self.cap.read()
         if ret:
             self.framePos = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
-            self.videoFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 480, 360))
-            if self.retina:
-                v = self.retina.sample(frame,self.fixation)
-                tight = self.retina.backproject_last()
-                cortical = self.cortex.cort_img(v)
-                self.focalFrame.setPixmap(ImageProcessing.convertToPixmap(tight, 480, 360))
-                self.corticalFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 480, 360))
-                self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 1280, 720))
-            else:
-                self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 1280, 720))
-            #self.updateDisplay()
+            self.updateDisplay(frame)
 
     def start(self):
         self.timer.start(1000.0/30)
@@ -109,15 +125,25 @@ class VideoPlayer(QWidget):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
         #self.updateDisplay()
 
-    def updateDisplay(self):
+    def updateDisplay(self, frame):
         self.parent.scrubSlider.setValue(self.framePos)
         self.parent.scrubSlider_2.setValue(self.framePos)
         self.parent.frameNum.display(self.framePos)
         self.parent.frameNum_2.display(self.framePos)
+        self.videoFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 480, 360))
+        if self.retina:
+            v = self.retina.sample(frame,self.fixation)
+            tight = self.retina.backproject_last()
+            cortical = self.cortex.cort_img(v)
+            self.focalFrame.setPixmap(ImageProcessing.convertToPixmap(tight, 480, 360))
+            self.corticalFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 480, 360))
+            self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 1280, 720))
+        else:
+            self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 1280, 720))
 
 class DMApp(QMainWindow, design.Ui_MainWindow):
 
-    ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+    #ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     fileName = None
     currentDir = None
     currentFile = None
@@ -140,6 +166,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
         self.maintabWidget.setCurrentIndex(0)
+        self.threadpool = QThreadPool()
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
@@ -169,12 +196,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         if datadir:
             print("Directory opened:" + datadir)
             self.currentDir = datadir
-            self.currentFrames = ImageProcessing.createImagesFromFolder(self.currentDir)
-            self.maintabWidget.setCurrentIndex(2)
-            self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
+            worker = Worker(self.createImagesFromFolder)
+            worker.signals.result.connect(self.setCurrentFrames)
+            worker.signals.finished.connect(self.fillGallery)
+            self.threadpool.start(worker)
+            self.infoLabel.setText("Folder opened: "+ self.currentDir)
+            self.generateButton.setText("Loading...")
+            self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
-            self.fillGallery()
-
 
     def loadMetaData(self):
         self.metadatamodel = QtGui.QStandardItemModel(self)
@@ -189,22 +218,37 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadatamodel.appendRow(items)
         self.metadata.setModel(self.metadatamodel)
 
+    def createImagesFromFolder(self):
+        currentFrames = []
+        for root, dirs, files in os.walk(self.currentDir):
+            for file in files:
+                print(file)
+                filetype = file.split(".")[-1]
+                if filetype in {'jpg','png'}:
+                    print("Creating image")
+                    image = cv2.imread(join(root,file))
+                    frame = im.Image(image=image,filepath=join(root,file))
+                    currentFrames.append(frame)
+        return currentFrames
+
     def getVideoFrames(self):
         if self.currentFile:
-            self.currentFile.getFrames()
-            self.currentFrames = self.currentFile.frames
-            self.generateButton.setText("Done!")
-            self.maintabWidget.setCurrentIndex(2)
-            self.verticalSlider_3.setRange(0,self.currentFile.numFrames/16)
+            worker = Worker(self.currentFile.getFrames)
+            worker.signals.result.connect(self.setCurrentFrames)
+            worker.signals.finished.connect(self.fillGallery)
+            self.threadpool.start(worker)
+            self.generateButton.setText("Generating...")
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
             self.generateButton.setDisabled(True)
-            self.fillGallery()
+
+    def setCurrentFrames(self, frames):
+        self.currentFrames = frames
 
     #Not currently in use
-    def saveFileDialog(self):
+    def saveFileDialog(self, isHDF5):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        self.fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","All Files (*);;Text Files (*.txt)", options=options)
+        fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","All Files (*);;Text Files (*.txt)", options=options)
         if fileName:
             print(fileName)
 
@@ -243,6 +287,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.browseButton.setDisabled(False)
 
     def fillGallery(self):
+        self.maintabWidget.setCurrentIndex(2)
+        self.generateButton.setText("Done!")
+        self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
         labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
         for index, label in enumerate(labels):
             label.setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[index + (index * self.verticalSlider_3.value())].image,320,180))

@@ -37,6 +37,7 @@ def convertToPixmap(frame, x, y):
     pixmap = QPixmap.fromImage(pic)
     return pixmap
 
+# moved into main, may leave there
 def createImagesFromFolder(currentdir):
     currentFrames = []
     for root, dirs, files in os.walk(currentdir):
