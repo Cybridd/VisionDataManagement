@@ -3,13 +3,14 @@ import os
 import design
 import cv2
 import time
+import pandas as pd
 import ImageProcessing
 from os.path import join
 from model import Image as im, Video as vid
 from PyQt5 import QtCore, QtGui, QtWidgets
-from QtCore import *#QThread, pyqtSignal, Qt, QTimer, QObject, QRunnable
-from QtGui import *#QImage, QPixmap, QStandardItem
-from QtWidgets import *#QApplication, QMainWindow, QInputDialog, QFileDialog, QWidget, QMessageBox
+from QtCore import *
+from QtGui import *
+from QtWidgets import *
 
 #TODO metadata editing, deleting files, export for DCNN,
 # Give to Worker - Image/Video object creation, image saving/exporting, display updating
@@ -44,7 +45,7 @@ class Worker(QRunnable):
             self.signals.result.emit(result)
         finally:
             end = time.time()
-            print("This operation required " + (end - start) + " seconds.")
+            print("This operation required " + str(end - start) + " seconds.")
             self.signals.finished.emit()
 
 class VideoPlayer(QWidget):
@@ -185,9 +186,13 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             elif filetype in self.metadatatypes:
                 self.metaFileName = fileName
                 self.fileType = filetype
-                self.loadMetaData()
+                worker = Worker(self.loadCsv)
+                worker.signals.finished.connect(self.displayMetaData)
+                worker.signals.error.connect(self.showWarning)
+                #worker.signals.result()
+                self.threadpool.start(worker)
             else:
-                self.showWarning('filetype')
+                self.showWarning('File type not supported')
 
     def openFolderDialog(self):
         options = QFileDialog.Options()
@@ -205,18 +210,48 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
-    def loadMetaData(self):
-        self.metadatamodel = QtGui.QStandardItemModel(self)
-        file = open(self.metaFileName,'rb')
-        reader = csv.reader(file)
+    def loadCsv(self):
+        metadata = pd.read_csv(self.metaFileName)
+        if "np.array" in metadata.dtypes:
+            #we need to generate the images from CSV
+            pass
+        else:
+            try:
+                metadata = metadata.set_index("imagename", drop=False)
+                imagename = metadata['imagename'].values
+                imagetype = metadata['imagetype'].values
+                parentfile = metadata['parentfile'].values
+                framenum = metadata['framenum'].values
+                colortype = metadata['colortype'].values
+                label = metadata['label'].values
+                fixationx = metadata['fixationx'].values
+                fixationy = metadata['fixationy'].values
+                for index, im in enumerate(self.currentFrames):
+                    im.type = imagetype[index]
+                    im.parent = parentfile[index]
+                    im.frameNum = framenum[index]
+                    im.colortype = colortype[index]
+                    im.label = label[index]
+                    im.fixation = {fixationx[index],fixationy[index]}
+            except KeyError:
+                self.showWarning('There was a problem with the format of the csv')
+            #except IndexError:
+            #    self.showWarning('There is an inequal number of images and metadata records')
+
+
+    def displayMetaData(self):
+        #self.metadatamodel = QtGui.QStandardItemModel(self)
+        #file = open(self.metaFileName,'rb')
+        #reader = csv.reader(file)
         #self.metadata.clear()
-        for row in reader:
-            items = [
-                QStandardItem(field)
-                for field in row
-            ]
-            self.metadatamodel.appendRow(items)
-        self.metadata.setModel(self.metadatamodel)
+        #for row in reader:
+        #    items = [
+        #        QStandardItem(field)
+        #        for field in row
+        #    ]
+        #    self.metadatamodel.appendRow(items)
+        #self.metadata.setModel(self.metadatamodel)
+        pass
 
     def createImagesFromFolder(self):
         currentFrames = []
@@ -285,6 +320,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         else:
             self.videoPlayer = None
             self.browseButton.setDisabled(False)
+            self.browseFolderButton.setDisabled(False)
 
     def fillGallery(self):
         self.maintabWidget.setCurrentIndex(2)
@@ -292,18 +328,22 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
         labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
         for index, label in enumerate(labels):
-            label.setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[index + (index * self.verticalSlider_3.value())].image,320,180))
+            if index < len(self.currentFrames):
+                label.setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[index + (index * self.verticalSlider_3.value())].image,320,180))
         numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
         for index, number in enumerate(numbers):
-            number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].frameNum)
+            if index < len(self.currentFrames):
+                number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].frameNum)
 
     def showWarning(self, error):
-        errormessage = QMessageBox()
+        messages = {
+        'exceptions.IndexError' : 'There is an inequal number of images and metadata records',
+        }
+        errormessage = QMessageBox(parent=None)
         errormessage.setStandardButtons(QMessageBox.Ok)
         errormessage.setWindowTitle('Warning')
         errormessage.setIcon(QMessageBox.Warning)
-        if error == 'filetype':
-            errormessage.setText("File type not supported")
+        errormessage.setText(str(error[1]))
         errormessage.exec_()
 
 
