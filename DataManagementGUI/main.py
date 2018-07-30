@@ -4,6 +4,7 @@ import design
 import cv2
 import time
 import pandas as pd
+import numpy as np
 import ImageProcessing
 from os.path import join
 from model import Image as im, Video as vid
@@ -166,6 +167,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.browseFolderButton.clicked.connect(self.openFolderDialog)
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
+        self.saveButton.clicked.connect(self.saveToNpy)
         self.maintabWidget.setCurrentIndex(0)
         self.threadpool = QThreadPool()
 
@@ -191,6 +193,16 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 worker.signals.error.connect(self.showWarning)
                 #worker.signals.result()
                 self.threadpool.start(worker)
+            elif filetype == 'npy':
+                self.currentFile = np.load(fileName)
+                worker = Worker(self.loadNpy)
+                worker.signals.result.connect(self.setCurrentFrames)
+                worker.signals.finished.connect(self.fillGallery)
+                self.threadpool.start(worker)
+                self.infoLabel.setText("File opened: "+ self.currentFile)
+                self.generateButton.setText("Loading...")
+                self.generateButton.setDisabled(True)
+                self.verticalSlider_3.valueChanged.connect(self.fillGallery)
             else:
                 self.showWarning('File type not supported')
 
@@ -209,6 +221,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.generateButton.setText("Loading...")
             self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+
+    def loadNpy(self):
+        pass
+
 
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName)
@@ -237,6 +253,17 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.showWarning('There was a problem with the format of the csv')
             #except IndexError:
             #    self.showWarning('There is an inequal number of images and metadata records')
+
+    def saveToNpy(self):
+        shape = self.currentFrames[0].image.shape
+        #print(self.currentFrames[0].image.shape)
+        array_list = np.empty([1,shape[0],shape[1],shape[2]])
+        #for index, frame in enumerate(self.currentFrames):
+            #print(frame.image)
+        #    array_list[index] = frame.image
+        array_list[0] = self.currentFrames[0].image
+        #print(array_list)
+        np.savez_compressed('testnpy.npy',array_list)
 
 
     def displayMetaData(self):
