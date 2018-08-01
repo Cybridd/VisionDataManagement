@@ -8,6 +8,7 @@ import numpy as np
 import ImageProcessing
 from os.path import join
 from model import Image as im, Video as vid
+from retinavision import utils
 from PyQt5 import QtCore, QtGui, QtWidgets
 from QtCore import *
 from QtGui import *
@@ -158,6 +159,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     isRetinaEnabled = False
     videofiletypes = {'mp4','avi'}
     metadatatypes = {'csv','json'}
+    vectorfiletypes = {'npy','npz'}
 
     def __init__(self,parent=None):
         super(DMApp,self).__init__(parent)
@@ -167,7 +169,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.browseFolderButton.clicked.connect(self.openFolderDialog)
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
-        self.saveButton.clicked.connect(self.saveToNpy)
+        self.saveButton.clicked.connect(self.saveFileDialog)
         self.maintabWidget.setCurrentIndex(0)
         self.threadpool = QThreadPool()
 
@@ -193,16 +195,22 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 worker.signals.error.connect(self.showWarning)
                 #worker.signals.result()
                 self.threadpool.start(worker)
-            elif filetype == 'npy':
-                self.currentFile = np.load(fileName)
+            elif filetype in self.vectorfiletypes:
+                self.currentFile = fileName
                 worker = Worker(self.loadNpy)
                 worker.signals.result.connect(self.setCurrentFrames)
                 worker.signals.finished.connect(self.fillGallery)
                 self.threadpool.start(worker)
-                self.infoLabel.setText("File opened: "+ self.currentFile)
+                self.infoLabel.setText("File opened: "+ fileName)
                 self.generateButton.setText("Loading...")
                 self.generateButton.setDisabled(True)
                 self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+            elif filetype == 'pkl':
+                self.currentFile = fileName
+                worker = Worker(self.loadPickle)
+                worker.signals.result.connect(self.setCurrentFrames)
+                worker.signals.finished.connect(self.fillGallery)
+                self.threadpool.start(worker)
             else:
                 self.showWarning('File type not supported')
 
@@ -223,62 +231,77 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
     def loadNpy(self):
-        pass
+        currentFrames = []
+        with np.load(self.currentFile) as data:
+            for d in data:
+                print(d.value)
+                #frame = im.Image(image=d)
+                #currentFrames.append(frame)
+        return currentFrames
 
+    def loadPickle(self):
+        return utils.loadPickle(self.currentFile)
 
     def loadCsv(self):
-        metadata = pd.read_csv(self.metaFileName)
-        if "np.array" in metadata.dtypes:
-            #we need to generate the images from CSV
-            pass
-        else:
-            try:
-                metadata = metadata.set_index("imagename", drop=False)
-                imagename = metadata['imagename'].values
-                imagetype = metadata['imagetype'].values
-                parentfile = metadata['parentfile'].values
-                framenum = metadata['framenum'].values
-                colortype = metadata['colortype'].values
-                label = metadata['label'].values
-                fixationx = metadata['fixationx'].values
-                fixationy = metadata['fixationy'].values
-                for index, im in enumerate(self.currentFrames):
-                    im.type = imagetype[index]
-                    im.parent = parentfile[index]
-                    im.frameNum = framenum[index]
-                    im.colortype = colortype[index]
-                    im.label = label[index]
-                    im.fixation = {fixationx[index],fixationy[index]}
-            except KeyError:
-                self.showWarning('There was a problem with the format of the csv')
-            #except IndexError:
-            #    self.showWarning('There is an inequal number of images and metadata records')
+        metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
+#        try:
+        #metadata = metadata.set_index("imagename", drop=False)
+        imagename = metadata['imagename'].values
+        imagetype = metadata['imagetype'].values
+        parentfile = metadata['parentfile'].values
+        framenum = metadata['framenum'].values
+        colortype = metadata['colortype'].values
+        label = metadata['label'].values
+        fixationx = metadata['fixationx'].values
+        fixationy = metadata['fixationy'].values
+        for index, im in enumerate(self.currentFrames):
+            im.type = imagetype[index]
+            im.parent = parentfile[index]
+            im.framenum = framenum[index]
+            im.colortype = colortype[index]
+            im.label = label[index]
+            im.fixation = {fixationx[index],fixationy[index]}
+#        except KeyError:
+#            self.showWarning('There was a problem with the format of the csv')
+#        except IndexError:
+#            self.showWarning('There is an inequal number of images and metadata records')
+#        except TypeError:
+#            self.showWarning('Please load images before loading metadata')
 
     def saveToNpy(self):
         shape = self.currentFrames[0].image.shape
-        #print(self.currentFrames[0].image.shape)
-        array_list = np.empty([1,shape[0],shape[1],shape[2]])
-        #for index, frame in enumerate(self.currentFrames):
-            #print(frame.image)
-        #    array_list[index] = frame.image
-        array_list[0] = self.currentFrames[0].image
-        #print(array_list)
-        np.savez_compressed('testnpy.npy',array_list)
+        list = []
+        #array_list = np.empty([len(self.currentFrames),shape[0],shape[1],shape[2]])
+        for frame in self.currentFrames:
+            list.append(frame.image)
+            #array_list[index] = frame.image
+
+        np.savez_compressed('testnpy',list)
 
 
-    def displayMetaData(self):
-        #self.metadatamodel = QtGui.QStandardItemModel(self)
-        #file = open(self.metaFileName,'rb')
-        #reader = csv.reader(file)
-        #self.metadata.clear()
-        #for row in reader:
-        #    items = [
-        #        QStandardItem(field)
-        #        for field in row
-        #    ]
-        #    self.metadatamodel.appendRow(items)
-        #self.metadata.setModel(self.metadatamodel)
-        pass
+    def displayMetaData(self, framenum=0):
+        self.metadatamodel = QtGui.QStandardItemModel(self)
+        currentframe = self.currentFrames[framenum]
+
+        labels = ['name','type','parent file','frame num','color channels',
+            'label','fixation x','fixation y']
+        items = []
+        for label in labels:
+            item = QStandardItem(label)
+            item.setFlags(QtCore.Qt.ItemIsEnabled)
+            items.append(item)
+        self.metadatamodel.appendColumn(items)
+
+        fields = [currentframe.name,currentframe.type,currentframe.parent,
+            currentframe.framenum,currentframe.colortype,currentframe.label,
+            currentframe.fixationx,currentframe.fixationy]
+        values = []
+        for field in fields:
+            v = QStandardItem(field)
+            values.append(v)
+        self.metadatamodel.appendColumn(values)
+
+        self.metadata.setModel(self.metadatamodel)
 
     def createImagesFromFolder(self):
         currentFrames = []
@@ -310,9 +333,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def saveFileDialog(self, isHDF5):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","All Files (*);;Text Files (*.txt)", options=options)
+        fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","All Files (*)", options=options)
+        filetype = fileName.split(".")[-1]
         if fileName:
-            print(fileName)
+            if filetype == 'pkl':
+                utils.writePickle(fileName, self.currentFrames)
 
     def setRetinaEnabled(self, event):
         if event:
@@ -360,17 +385,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
         for index, number in enumerate(numbers):
             if index < len(self.currentFrames):
-                number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].frameNum)
+                number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].framenum)
 
     def showWarning(self, error):
         messages = {
         'exceptions.IndexError' : 'There is an inequal number of images and metadata records',
+        'exceptions.KeyError' : 'Please load images before loading metadata',
         }
         errormessage = QMessageBox(parent=None)
         errormessage.setStandardButtons(QMessageBox.Ok)
         errormessage.setWindowTitle('Warning')
         errormessage.setIcon(QMessageBox.Warning)
-        errormessage.setText(str(error[1]))
+        errormessage.setText(messages[str(error[1])])
         errormessage.exec_()
 
 
