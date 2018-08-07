@@ -3,11 +3,12 @@ import os
 import design
 import cv2
 import time
-import pandas as pd
 import numpy as np
+import h5py
 import ImageProcessing
 from os.path import join
-from model import Image as im, Video as vid
+from model import Image, ImageVector, Video
+from worker import Worker
 from retinavision import utils
 from PyQt5 import QtCore, QtGui, QtWidgets
 from QtCore import *
@@ -16,39 +17,6 @@ from QtWidgets import *
 
 #TODO metadata editing, deleting files, export for DCNN,
 # Give to Worker - Image/Video object creation, image saving/exporting, display updating
-
-class WorkerSignals(QObject):
-
-    finished = pyqtSignal()
-    error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
-    progress = pyqtSignal(int)
-
-class Worker(QRunnable):
-
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
-        self.kwargs['progress_callback'] = self.signals.progress
-
-    @pyqtSlot()
-    def run(self):
-        try:
-            start = time.time()
-            result = self.fn(*self.args)
-        except:
-            traceback.print_exc()
-            exctype, value = sys.exc_info()[:2]
-            self.signals.error.emit((exctype, value, traceback.format_exc()))
-        else:
-            self.signals.result.emit(result)
-        finally:
-            end = time.time()
-            print("This operation required " + str(end - start) + " seconds.")
-            self.signals.finished.emit()
 
 class VideoPlayer(QWidget):
 
@@ -159,7 +127,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     isRetinaEnabled = False
     videofiletypes = {'mp4','avi'}
     metadatatypes = {'csv','json'}
-    vectorfiletypes = {'npy','npz'}
+    rawvectortypes = {'npy','npz'}
 
     def __init__(self,parent=None):
         super(DMApp,self).__init__(parent)
@@ -195,7 +163,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 worker.signals.error.connect(self.showWarning)
                 #worker.signals.result()
                 self.threadpool.start(worker)
-            elif filetype in self.vectorfiletypes:
+            elif filetype in self.rawvectortypes:
                 self.currentFile = fileName
                 worker = Worker(self.loadNpy)
                 worker.signals.result.connect(self.setCurrentFrames)
@@ -208,6 +176,12 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             elif filetype == 'pkl':
                 self.currentFile = fileName
                 worker = Worker(self.loadPickle)
+                worker.signals.result.connect(self.setCurrentFrames)
+                worker.signals.finished.connect(self.fillGallery)
+                self.threadpool.start(worker)
+            elif filetype == 'h5':
+                self.currentFile = fileName
+                worker = Worker(self.loadhdf5)
                 worker.signals.result.connect(self.setCurrentFrames)
                 worker.signals.finished.connect(self.fillGallery)
                 self.threadpool.start(worker)
@@ -230,6 +204,27 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
+    def loadhdf5(self):
+        currentFrames = []
+        hdf5_open = h5py.File(self.currentFile, mode="r")
+        try:
+            for i in range(len(hdf5_open['vectors'])):
+                if 'label' in hdf5_open.keys():
+                    v = ImageVector(vector=hdf5_open['vectors'][i],
+                        framenum=hdf5_open['framenum'][i],
+                        timestamp=hdf5_open['timestamp'][i],
+                        label=hdf5_open['label'][i],
+                        fixationy=hdf5_open['fixationy'][i],
+                        fixationx=hdf5_open['fixationx'][i],
+                        retinatype=hdf5_open['retinatype'][i])
+                else:
+                    v = ImageVector(vector=hdf5_open['vectors'][i])
+                currentFrames.append(v)
+        except KeyError:
+            print("There was a problem with the format of the hdf5 file")
+        return currentFrames
+
+
     def loadNpy(self):
         currentFrames = []
         with np.load(self.currentFile) as data:
@@ -245,15 +240,25 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
 #        try:
-        #metadata = metadata.set_index("imagename", drop=False)
-        imagename = metadata['imagename'].values
-        imagetype = metadata['imagetype'].values
+
+        # we need a decision engine that decides what to do based on
+        # csv headers, throwing an exception only when all options are exhausted
+
+        # image file metadata
         parentfile = metadata['parentfile'].values
-        framenum = metadata['framenum'].values
+        # image and video file metadata
         colortype = metadata['colortype'].values
+        # image and vector metadata
+        framenum = metadata['framenum'].values
+        timestamp = metadata['timestamp'].values
         label = metadata['label'].values
-        fixationx = metadata['fixationx'].values
+        # vector only metadata
+        vector = metadata['vector'].values
         fixationy = metadata['fixationy'].values
+        fixationx = metadata['fixationx'].values
+        retinatype  metadata['retinatype'].values
+
+        # load data into model here
         for index, im in enumerate(self.currentFrames):
             im.type = imagetype[index]
             im.parent = parentfile[index]
@@ -312,7 +317,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 if filetype in {'jpg','png'}:
                     print("Creating image")
                     image = cv2.imread(join(root,file))
-                    frame = im.Image(image=image,filepath=join(root,file))
+                    frame = Image(image=image,filepath=join(root,file))
                     currentFrames.append(frame)
         return currentFrames
 

@@ -2,10 +2,37 @@ import sys
 import os
 import csv
 import cv2
-import pandas as pd
-import Image as im
 from os.path import join
 
+
+class Image(object):
+
+    def __init__(self,image=None,filepath=None,colortype=None,parent=None,framenum=None,label=None):
+        self.vector = None
+        self.image = image
+        if filepath:
+            self.name = filepath.split("/")[-1]
+            self.type = filepath.split('.')[-1]
+        self.filepath = filepath
+        self.parent = parent
+        self.framenum = frameNum
+        self.colortype = colortype
+        self.label = label
+
+    def saveImageOnly(self,dir):
+        print("Saving image")
+        cv2.imwrite(join(dir,"frame%d.png" % self.framenum), self.image)
+
+class ImageVector(object):
+
+    def __init__(self,vector,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
+        self._vector = vector
+        self.framenum = framenum
+        self.timestamp = timestamp
+        self.label = label
+        self.fixationy = fixationy
+        self.fixationx = fixationx
+        self.retinatype = retinatype
 
 class Video(object):
 
@@ -14,11 +41,11 @@ class Video(object):
         'avi': 'xvid'
     }
 
-    def __init__(self,filepath,palette):
+    def __init__(self,filepath,colortype):
         self.name = filepath.split("/")[-1]
         self.filepath = filepath
         self.type = filepath.split('.')[-1]
-        self.palette = palette
+        self.colortype = colortype
         self.frames = None # don't fill these on load, takes to long without threading
         self.numFrames = None
 
@@ -32,7 +59,7 @@ class Video(object):
             ret, frame = self.cap.read()
             if ret:
                 frameNum = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-                self.frames[frameNum - 1] = im.Image(frame,parent=self,frameNum=frameNum,name="frame"+str(frameNum))
+                self.frames[frameNum - 1] = Image(frame,parent=self,frameNum=framenum,name="frame"+str(frameNum))
             else:
                 break
         print("Images are now in memory at self.frames. Save them to disk by calling a version of saveFrames")
