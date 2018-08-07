@@ -7,7 +7,7 @@ from os.path import join
 
 class Image(object):
 
-    def __init__(self,image=None,filepath=None,colortype=None,parent=None,framenum=None,label=None):
+    def __init__(self,image=None,name=None,filepath=None,colortype=None,parent=None,framenum=None,label=None):
         self.vector = None
         self.image = image
         if filepath:
@@ -15,7 +15,7 @@ class Image(object):
             self.type = filepath.split('.')[-1]
         self.filepath = filepath
         self.parent = parent
-        self.framenum = frameNum
+        self.framenum = framenum
         self.colortype = colortype
         self.label = label
 
@@ -58,8 +58,8 @@ class Video(object):
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             if ret:
-                frameNum = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
-                self.frames[frameNum - 1] = Image(frame,parent=self,frameNum=framenum,name="frame"+str(frameNum))
+                framenum = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+                self.frames[framenum - 1] = Image(frame,parent=self,framenum=framenum,name="frame"+str(framenum))
             else:
                 break
         print("Images are now in memory at self.frames. Save them to disk by calling a version of saveFrames")

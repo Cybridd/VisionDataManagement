@@ -4,6 +4,7 @@ import design
 import cv2
 import time
 import numpy as np
+import pandas as pd
 import h5py
 import ImageProcessing
 from os.path import join
@@ -152,7 +153,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             print("Opening " + fileName)
             self.infoLabel.setText("File opened: " + fileName)
             if filetype in self.videofiletypes:
-                self.currentFile = vid.Video(filepath=fileName,palette="rgb")
+                self.currentFile = Video(filepath=fileName,colortype="rgb")
                 self.generateButton.setDisabled(False)
                 self.startVideoPlayer()
             elif filetype in self.metadatatypes:
@@ -239,35 +240,48 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
-#        try:
+        print(metadata.columns)
 
-        # we need a decision engine that decides what to do based on
-        # csv headers, throwing an exception only when all options are exhausted
-
-        # image file metadata
-        parentfile = metadata['parentfile'].values
-        # image and video file metadata
-        colortype = metadata['colortype'].values
-        # image and vector metadata
-        framenum = metadata['framenum'].values
-        timestamp = metadata['timestamp'].values
-        label = metadata['label'].values
-        # vector only metadata
-        vector = metadata['vector'].values
-        fixationy = metadata['fixationy'].values
-        fixationx = metadata['fixationx'].values
-        retinatype  metadata['retinatype'].values
+        try:
+            # we need a decision engine that decides what to do based on
+            # csv headers, throwing an exception only when all options are exhausted
+            datatype = type(self.currentFrames[0])
+            if datatype == 'ImageVector' or 'Image':
+                # image and vector metadata
+                framenum = metadata['framenum'].values
+                timestamp = metadata['timestamp'].values
+                label = metadata['label'].values
+            if datatype == 'ImageVector':
+                # vector only metadata
+                vector = metadata['vector'].values
+                fixationy = metadata['fixationy'].values
+                fixationx = metadata['fixationx'].values
+                retinatype = metadata['retinatype'].values
+            elif datatype == 'Image':
+                # image file metadata
+                parentfile = metadata['parentfile'].values
+                # image and video file metadata
+                colortype = metadata['colortype'].values
+        except KeyError:
+            self.showWarning('There was a problem with the format of the csv')
 
         # load data into model here
-        for index, im in enumerate(self.currentFrames):
-            im.type = imagetype[index]
-            im.parent = parentfile[index]
-            im.framenum = framenum[index]
-            im.colortype = colortype[index]
-            im.label = label[index]
-            im.fixation = {fixationx[index],fixationy[index]}
-#        except KeyError:
-#            self.showWarning('There was a problem with the format of the csv')
+        for i in xrange(len(self.currentFrames)):
+            currentframe = self.currentFrames[i]
+            if datatype == 'ImageVector' or 'Image':
+                currentframe.framenum = framenum[i]
+                currentframe.timestamp = timestamp[i]
+                currentframe.label = label[i]
+            if datatype == 'ImageVector':
+                currentframe.vector = vector[i]
+                currentframe.fixationy = fixationy[i]
+                currentframe.fixationx = fixationx[i]
+                currentframe.retinatype = retinatype[i]
+            if datatype == 'Image':
+                currentframe.parent = parentfile[i]
+            if datatype == 'Image' or 'Video':
+                currentframe.colortype = colortype[i]
+
 #        except IndexError:
 #            self.showWarning('There is an inequal number of images and metadata records')
 #        except TypeError:
@@ -384,13 +398,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.generateButton.setText("Done!")
         self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
         labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
-        for index, label in enumerate(labels):
-            if index < len(self.currentFrames):
-                label.setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[index + (index * self.verticalSlider_3.value())].image,320,180))
+        for i in xrange(len(labels)):
+            print(labels[i].objectName())
+            if i < len(self.currentFrames):
+                labels[i].setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[i + (i * self.verticalSlider_3.value())].image,320,180))
         numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
-        for index, number in enumerate(numbers):
-            if index < len(self.currentFrames):
-                number.display(self.currentFrames[index + (index * self.verticalSlider_3.value())].framenum)
+        for i in xrange(len(numbers)):
+            if i < len(self.currentFrames):
+                numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
 
     def showWarning(self, error):
         messages = {
