@@ -23,18 +23,26 @@ class Image(object):
         print("Saving image")
         cv2.imwrite(join(dir,"frame%d.png" % self.framenum), self.image)
 
+    def __dir__(self):
+        return ['name','type','framenum','colortype','label']
+
 class ImageVector(object):
 
     def __init__(self,vector,id=None,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
         self._vector = vector
         self.id = id
-        self.backproject = None
+        self.image = None # backprojected image for display
         self.framenum = framenum
         self._timestamp = timestamp
         self.label = label
         self.fixationy = fixationy
         self.fixationx = fixationx
         self.retinatype = retinatype
+
+    def __dir__(self):
+        return ['id','framenum','_timestamp','label','fixationy','fixationx','retinatype']
+
+
 
 class Video(object):
 

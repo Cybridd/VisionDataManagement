@@ -57,8 +57,7 @@ class VideoPlayer(QWidget):
         self.corticalFrame = parent.corticallabel
         self.focusFrame = parent.biglabel
         if isRetinaEnabled:
-            print("Retina enabled signal received")
-            self.retina, self.fixation = ImageProcessing.startRetina(self.cap)
+            self.retina, self.fixation = ImageProcessing.prepareLiveRetina(self.cap)
             self.cortex = ImageProcessing.createCortex()
 
 
@@ -212,10 +211,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def loadhdf5(self):
         currentFrames = []
         hdf5_open = h5py.File(self.currentFile, mode="r")
+        R = ImageProcessing.startRetina()
         try:
-            for i in range(len(hdf5_open['vectors'])):
-                if 'label' in hdf5_open.keys():
-                    v = ImageVector(vector=hdf5_open['vectors'][i],
+            for i in range(len(hdf5_open['vector'])):
+                if 'retinatype' in hdf5_open.keys():
+                    v = ImageVector(vector=hdf5_open['vector'][i],
                         framenum=hdf5_open['framenum'][i],
                         timestamp=hdf5_open['timestamp'][i],
                         label=hdf5_open['label'][i],
@@ -223,11 +223,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                         fixationx=hdf5_open['fixationx'][i],
                         retinatype=hdf5_open['retinatype'][i])
                 else:
-                    v = ImageVector(vector=hdf5_open['vectors'][i])
+                    v = ImageVector(vector=hdf5_open['vector'][i])
+                shape = [1280,720,v._vector.shape[-1]]
+                R.prepare(shape,fix=(v.fixationy,v.fixationx))
+                print("Adding backprojected image to model")
+                backproject = R.backproject(v._vector,shape,fix=(v.fixationy,v.fixationx))
+
+                v.image = cv2.imdecode(backproject,0)
                 currentFrames.append(v)
         except KeyError:
             print("There was a problem with the format of the hdf5 file")
-        return currentFrames
+        finally:
+            return currentFrames
 
 
     def loadNpy(self):
@@ -245,46 +252,48 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
         print(metadata.columns)
-
-        try:
+        targettypes = dir(self.currentFrames[0])
+#        try:
             # we need a decision engine that decides what to do based on
             # csv headers, throwing an exception only when all options are exhausted
-            datatype = type(self.currentFrames[0])
-            if datatype == 'ImageVector' or 'Image':
-                # image and vector metadata
-                framenum = metadata['framenum'].values
-                timestamp = metadata['timestamp'].values
-                label = metadata['label'].values
-            if datatype == 'ImageVector':
-                # vector only metadata
-                vector = metadata['vector'].values
-                fixationy = metadata['fixationy'].values
-                fixationx = metadata['fixationx'].values
-                retinatype = metadata['retinatype'].values
-            elif datatype == 'Image':
-                # image file metadata
-                parentfile = metadata['parentfile'].values
-                # image and video file metadata
-                colortype = metadata['colortype'].values
-        except KeyError:
-            self.showWarning('There was a problem with the format of the csv')
+#            datatype = type(self.currentFrames[0])
+#            if datatype == 'ImageVector' or 'Image':
+#                # image and vector metadata
+#                framenum = metadata['framenum'].values
+#                timestamp = metadata['timestamp'].values
+#                label = metadata['label'].values
+#            if datatype == 'ImageVector':
+#                # vector only metadata
+#                vector = metadata['vector'].values
+#                fixationy = metadata['fixationy'].values
+#                fixationx = metadata['fixationx'].values
+#                retinatype = metadata['retinatype'].values
+#            elif datatype == 'Image':
+#                # image file metadata
+#                parentfile = metadata['parentfile'].values
+#                colortype = metadata['colortype'].values # image and video file metadata
+#        except KeyError:
+#            self.showWarning('There was a problem with the format of the csv')
 
         # load data into model here
         for i in xrange(len(self.currentFrames)):
             currentframe = self.currentFrames[i]
-            if datatype == 'ImageVector' or 'Image':
-                currentframe.framenum = framenum[i]
-                currentframe.timestamp = timestamp[i]
-                currentframe.label = label[i]
-            if datatype == 'ImageVector':
-                currentframe.vector = vector[i]
-                currentframe.fixationy = fixationy[i]
-                currentframe.fixationx = fixationx[i]
-                currentframe.retinatype = retinatype[i]
-            if datatype == 'Image':
-                currentframe.parent = parentfile[i]
-            if datatype == 'Image' or 'Video':
-                currentframe.colortype = colortype[i]
+            for column in metadata.columns:
+                if hasattr(currentframe, column):
+                    setattr(currentframe, column,metadata[column][i])
+
+#            if datatype == 'ImageVector' or 'Image':
+#                currentframe.framenum = framenum[i]
+#                currentframe.timestamp = timestamp[i]
+#                currentframe.label = label[i]
+#            if datatype == 'ImageVector':
+#                currentframe.vector = vector[i]
+#                currentframe.fixationy = fixationy[i]
+#                currentframe.fixationx = fixationx[i]
+#                currentframe.retinatype = retinatype[i]
+#            if datatype == 'Image':
+#                currentframe.parent = parentfile[i]
+#                currentframe.colortype = colortype[i] # also for Video
 
 #        except IndexError:
 #            self.showWarning('There is an inequal number of images and metadata records')
@@ -306,24 +315,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.metadatamodel = QtGui.QStandardItemModel(self)
         currentframe = self.currentFrames[framenum]
 
-        labels = ['name','type','parent file','frame num','color channels',
-            'label','fixation x','fixation y']
+        labels = dir(self.currentFrames[0])
         items = []
+        values = []
         for label in labels:
             item = QStandardItem(label)
             item.setFlags(QtCore.Qt.ItemIsEnabled)
             items.append(item)
+            value = QStandardItem(getattr(currentframe, label))
+            values.append(value)
+
         self.metadatamodel.appendColumn(items)
-
-        fields = [currentframe.name,currentframe.type,currentframe.parent,
-            currentframe.framenum,currentframe.colortype,currentframe.label,
-            currentframe.fixationx,currentframe.fixationy]
-        values = []
-        for field in fields:
-            v = QStandardItem(field)
-            values.append(v)
         self.metadatamodel.appendColumn(values)
-
         self.metadata.setModel(self.metadatamodel)
 
     def createImagesFromFolder(self):
@@ -401,17 +404,16 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.maintabWidget.setCurrentIndex(2)
         self.generateButton.setText("Done!")
         self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
+        print("Filling gallery")
         for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
-                # if type == image:
-                # currentframe = self.currentFrames[i + (i * self.verticalSlider_3.value())].image
-                # elif type == imagevector:
-                # currentframe = self.currentFrames[i + (i * self.verticalSlider_3.value())].backproject
-                self.labels[i].setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[i + (i * self.verticalSlider_3.value())].image,320,180))
-                self.numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
-#        for i in xrange(len(self.numbers)):
-#            if i < len(self.currentFrames):
-#                self.numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
+                print("Filling gallery slot")
+                currentframe = self.currentFrames[i + (16 * self.verticalSlider_3.value())]
+                print("Setting pixmap")
+                self.labels[i].setPixmap(ImageProcessing.convertToPixmap(currentframe.image,320,180))
+                print("Setting framenum")
+                self.numbers[i].display(currentframe.framenum)
+        #self.displayMetaData()
 
     def showWarning(self, error):
         messages = {
@@ -422,7 +424,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         errormessage.setStandardButtons(QMessageBox.Ok)
         errormessage.setWindowTitle('Warning')
         errormessage.setIcon(QMessageBox.Warning)
-        errormessage.setText(messages[str(error[1])])
+        errormessage.setText("Oops!")# messages[str(error[1])]
         errormessage.exec_()
 
 

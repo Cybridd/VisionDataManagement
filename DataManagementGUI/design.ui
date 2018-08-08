@@ -862,7 +862,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num0_8">
+       <widget class="QLCDNumber" name="numa">
         <property name="geometry">
          <rect>
           <x>200</x>
@@ -872,7 +872,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num0_9">
+       <widget class="QLCDNumber" name="numb">
         <property name="geometry">
          <rect>
           <x>550</x>
@@ -882,7 +882,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num0_10">
+       <widget class="QLCDNumber" name="numc">
         <property name="geometry">
          <rect>
           <x>900</x>
@@ -892,7 +892,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num0_11">
+       <widget class="QLCDNumber" name="numd">
         <property name="geometry">
          <rect>
           <x>1250</x>
@@ -902,7 +902,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num1_8">
+       <widget class="QLCDNumber" name="numh">
         <property name="geometry">
          <rect>
           <x>1250</x>
@@ -912,7 +912,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num1_9">
+       <widget class="QLCDNumber" name="nume">
         <property name="geometry">
          <rect>
           <x>200</x>
@@ -922,7 +922,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num1_10">
+       <widget class="QLCDNumber" name="numf">
         <property name="geometry">
          <rect>
           <x>550</x>
@@ -932,7 +932,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num1_11">
+       <widget class="QLCDNumber" name="numg">
         <property name="geometry">
          <rect>
           <x>900</x>
@@ -942,7 +942,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num2_8">
+       <widget class="QLCDNumber" name="numj">
         <property name="geometry">
          <rect>
           <x>550</x>
@@ -952,7 +952,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num2_9">
+       <widget class="QLCDNumber" name="numi">
         <property name="geometry">
          <rect>
           <x>200</x>
@@ -962,7 +962,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num2_10">
+       <widget class="QLCDNumber" name="numk">
         <property name="geometry">
          <rect>
           <x>900</x>
@@ -972,7 +972,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num2_11">
+       <widget class="QLCDNumber" name="numl">
         <property name="geometry">
          <rect>
           <x>1250</x>
@@ -982,7 +982,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num3_8">
+       <widget class="QLCDNumber" name="numo">
         <property name="geometry">
          <rect>
           <x>900</x>
@@ -992,7 +992,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num3_9">
+       <widget class="QLCDNumber" name="numn">
         <property name="geometry">
          <rect>
           <x>550</x>
@@ -1002,7 +1002,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num3_10">
+       <widget class="QLCDNumber" name="nump">
         <property name="geometry">
          <rect>
           <x>1250</x>
@@ -1012,7 +1012,7 @@
          </rect>
         </property>
        </widget>
-       <widget class="QLCDNumber" name="num3_11">
+       <widget class="QLCDNumber" name="numm">
         <property name="geometry">
          <rect>
           <x>200</x>
