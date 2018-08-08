@@ -25,10 +25,12 @@ class Image(object):
 
 class ImageVector(object):
 
-    def __init__(self,vector,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
+    def __init__(self,vector,id=None,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
         self._vector = vector
+        self.id = id
+        self.backproject = None
         self.framenum = framenum
-        self.timestamp = timestamp
+        self._timestamp = timestamp
         self.label = label
         self.fixationy = fixationy
         self.fixationx = fixationx

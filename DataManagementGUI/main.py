@@ -139,6 +139,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
         self.saveButton.clicked.connect(self.saveFileDialog)
+        self.labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
+        self.labels.sort(key=lambda label: label.objectName())
+        self.numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
+        self.numbers.sort(key=lambda number: number.objectName())
         self.maintabWidget.setCurrentIndex(0)
         self.threadpool = QThreadPool()
 
@@ -397,15 +401,17 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.maintabWidget.setCurrentIndex(2)
         self.generateButton.setText("Done!")
         self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
-        labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
-        for i in xrange(len(labels)):
-            print(labels[i].objectName())
+        for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
-                labels[i].setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[i + (i * self.verticalSlider_3.value())].image,320,180))
-        numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
-        for i in xrange(len(numbers)):
-            if i < len(self.currentFrames):
-                numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
+                # if type == image:
+                # currentframe = self.currentFrames[i + (i * self.verticalSlider_3.value())].image
+                # elif type == imagevector:
+                # currentframe = self.currentFrames[i + (i * self.verticalSlider_3.value())].backproject
+                self.labels[i].setPixmap(ImageProcessing.convertToPixmap(self.currentFrames[i + (i * self.verticalSlider_3.value())].image,320,180))
+                self.numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
+#        for i in xrange(len(self.numbers)):
+#            if i < len(self.currentFrames):
+#                self.numbers[i].display(self.currentFrames[i + (i * self.verticalSlider_3.value())].framenum)
 
     def showWarning(self, error):
         messages = {
