@@ -104,6 +104,7 @@ class VideoPlayer(QWidget):
         self.videoFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 480, 360))
         if self.retina:
             v = self.retina.sample(frame,self.fixation)
+            print(frame.shape)
             tight = self.retina.backproject_last()
             cortical = self.cortex.cort_img(v)
             self.focalFrame.setPixmap(ImageProcessing.convertToPixmap(tight, 480, 360))
@@ -137,7 +138,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.browseFolderButton.clicked.connect(self.openFolderDialog)
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
-        self.saveButton.clicked.connect(self.saveFileDialog)
+        self.exportButton.clicked.connect(self.saveFileDialog)
+        self.actionExport.triggered.connect(self.saveFileDialog)
+        self.actionFile.triggered.connect(self.openFileNameDialog)
+        self.actionFolder.triggered.connect(self.openFolderDialog)
+        self.actionExit.triggered.connect(self.closeApp)
         self.labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
         self.labels.sort(key=lambda label: label.objectName())
         self.numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
@@ -187,7 +192,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.currentFile = fileName
                 worker = Worker(self.loadhdf5)
                 worker.signals.result.connect(self.setCurrentFrames)
-                worker.signals.finished.connect(self.fillGallery)
+                #worker.signals.finished.connect(self.fillGallery)
                 self.threadpool.start(worker)
             else:
                 self.showWarning('File type not supported')
@@ -224,18 +229,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                         retinatype=hdf5_open['retinatype'][i])
                 else:
                     v = ImageVector(vector=hdf5_open['vector'][i])
-                shape = [1280,720,v._vector.shape[-1]]
-                R.prepare(shape,fix=(v.fixationy,v.fixationx))
+                print(v._vector.shape)
+                shape = [720,1280,1]#v._vector.shape[-1]
+                #R.prepare(shape,fix=(v.fixationy,v.fixationx))
                 print("Adding backprojected image to model")
-                backproject = R.backproject(v._vector,shape,fix=(v.fixationy,v.fixationx))
-
-                v.image = cv2.imdecode(backproject,0)
+                #v.image = R.backproject(v._vector,fix=(v.fixationy,v.fixationx),shape=shape)
+                #print(v.image.shape)
+                #v.image = cv2.imdecode(backproject,0)
                 currentFrames.append(v)
         except KeyError:
             print("There was a problem with the format of the hdf5 file")
         finally:
             return currentFrames
-
 
     def loadNpy(self):
         currentFrames = []
@@ -300,17 +305,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 #        except TypeError:
 #            self.showWarning('Please load images before loading metadata')
 
-    def saveToNpy(self):
-        shape = self.currentFrames[0].image.shape
-        list = []
-        #array_list = np.empty([len(self.currentFrames),shape[0],shape[1],shape[2]])
-        for frame in self.currentFrames:
-            list.append(frame.image)
-            #array_list[index] = frame.image
-
-        np.savez_compressed('testnpy',list)
-
-
     def displayMetaData(self, framenum=0):
         self.metadatamodel = QtGui.QStandardItemModel(self)
         currentframe = self.currentFrames[framenum]
@@ -357,13 +351,72 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     #Not currently in use
     def saveFileDialog(self, isHDF5):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","All Files (*)", options=options)
+        #options = QFileDialog.Options()
+        #options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
         filetype = fileName.split(".")[-1]
         if fileName:
+            self.exportfilename = fileName
             if filetype == 'pkl':
                 utils.writePickle(fileName, self.currentFrames)
+            elif filetype == 'h5':
+                worker = Worker(self.saveHDF5)
+                self.threadpool.start(worker)
+                self.generateButton.setText("Saving to HDF5...")
+            elif filetype == 'csv':
+                worker = Worker(self.saveCSV)
+                self.threadpool.start(worker)
+                self.generateButton.setText("Saving to CSV...")
+            else:
+                print("Invalid file type")
+
+    def saveToNpy(self):
+        list = []
+        for frame in self.currentFrames:
+            list.append(frame.image)
+        np.savez_compressed('testnpy',list)
+
+    def saveHDF5(self):
+        vectors, labels, framenums, timestamps, fixationY, fixationX, retinatypes = ([] for i in range(7))
+        hdf5_file = h5py.File(self.exportfilename, mode='w')
+        currentframe = None
+        for i in xrange(len(self.currentFrames)):
+            currentframe = self.currentFrames[i]
+            vectors.append(currentframe._vector)
+            labels.append(currentframe.label)
+            framenums.append(currentframe.framenum)
+            timestamps.append(currentframe._timestamp)
+            fixationY.append(currentframe.fixationy)
+            fixationX.append(currentframe.fixationx)
+            retinatypes.append(currentframe.retinatype)
+
+        #datatype = type(self.currentFrames[0].vector[0])
+        #print(datatype)
+        hdf5_file.create_dataset("vector",(len(vectors),len(currentframe._vector)),np.float64)
+        hdf5_file.create_dataset("label",(len(labels),1),np.int8)
+        hdf5_file.create_dataset("framenum",(len(labels),1),np.int8)
+        hdf5_file.create_dataset("timestamp",(len(labels),1),np.int8)
+        hdf5_file.create_dataset("fixationy",(len(labels),1),np.int8)
+        hdf5_file.create_dataset("fixationx",(len(labels),1),np.int8)
+        hdf5_file.create_dataset("retinatype",(len(labels),1),np.int8)
+
+        for i in xrange(len(vectors)):
+            hdf5_file["vector"][i] = vectors[i]
+            hdf5_file["label"][i] = labels[i]
+            hdf5_file["framenum"][i] = framenums[i]
+            hdf5_file["timestamp"][i] = timestamps[i]
+            hdf5_file["fixationy"][i] = fixationY[i]
+            hdf5_file["fixationx"][i] = fixationX[i]
+            hdf5_file["retinatype"][i] = retinatypes[i]
+
+        hdf5_file.close()
+
+    def saveCSV(self):
+        columns = ['_vector'] + dir(self.currentFrames[0])
+        df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in self.currentFrames])
+        # exported file should be read with ';' delimiter ONLY
+        df.to_csv(self.exportfilename,encoding='utf-8',sep=";")#compression='gzip'
+
 
     def setRetinaEnabled(self, event):
         if event:
@@ -408,12 +461,15 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
                 print("Filling gallery slot")
-                currentframe = self.currentFrames[i + (16 * self.verticalSlider_3.value())]
+                tempindex = i + (16 * self.verticalSlider_3.value())
+                currentframe = self.currentFrames[tempindex]
                 print("Setting pixmap")
                 self.labels[i].setPixmap(ImageProcessing.convertToPixmap(currentframe.image,320,180))
+                self.labels[i].setIndex(tempindex)
+                self.labels[i].clicked.connect(self.displayMetaData)
                 print("Setting framenum")
                 self.numbers[i].display(currentframe.framenum)
-        #self.displayMetaData()
+        self.displayMetaData()
 
     def showWarning(self, error):
         messages = {
@@ -426,6 +482,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         errormessage.setIcon(QMessageBox.Warning)
         errormessage.setText("Oops!")# messages[str(error[1])]
         errormessage.exec_()
+
+    def closeApp(self):
+        sys.exit()
 
 
 def main():

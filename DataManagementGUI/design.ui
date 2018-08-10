@@ -156,30 +156,17 @@
       <string>Save</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="exportCSVButton">
+    <widget class="QPushButton" name="exportButton">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>960</y>
-       <width>91</width>
+       <x>60</x>
+       <y>930</y>
+       <width>151</width>
        <height>31</height>
       </rect>
      </property>
      <property name="text">
-      <string>Export as CSV</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="exportHDF5Button">
-     <property name="geometry">
-      <rect>
-       <x>140</x>
-       <y>960</y>
-       <width>91</width>
-       <height>31</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Export as HDF5</string>
+      <string>Export as...</string>
      </property>
     </widget>
     <widget class="QLabel" name="infoLabel">
@@ -606,7 +593,7 @@
        <property name="frameShadow">
         <enum>QFrame::Raised</enum>
        </property>
-       <widget class="QLabel" name="a">
+       <widget class="ClickLabel" name="a">
         <property name="geometry">
          <rect>
           <x>70</x>
@@ -622,7 +609,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="b">
+       <widget class="ClickLabel" name="b">
         <property name="geometry">
          <rect>
           <x>420</x>
@@ -638,7 +625,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="c">
+       <widget class="ClickLabel" name="c">
         <property name="geometry">
          <rect>
           <x>770</x>
@@ -654,7 +641,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="d">
+       <widget class="ClickLabel" name="d">
         <property name="geometry">
          <rect>
           <x>1120</x>
@@ -670,7 +657,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="g">
+       <widget class="ClickLabel" name="g">
         <property name="geometry">
          <rect>
           <x>770</x>
@@ -686,7 +673,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="h">
+       <widget class="ClickLabel" name="h">
         <property name="geometry">
          <rect>
           <x>1120</x>
@@ -702,7 +689,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="e">
+       <widget class="ClickLabel" name="e">
         <property name="geometry">
          <rect>
           <x>70</x>
@@ -718,7 +705,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="f">
+       <widget class="ClickLabel" name="f">
         <property name="geometry">
          <rect>
           <x>420</x>
@@ -734,7 +721,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="l">
+       <widget class="ClickLabel" name="l">
         <property name="geometry">
          <rect>
           <x>1120</x>
@@ -750,7 +737,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="i">
+       <widget class="ClickLabel" name="i">
         <property name="geometry">
          <rect>
           <x>70</x>
@@ -766,7 +753,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="k">
+       <widget class="ClickLabel" name="k">
         <property name="geometry">
          <rect>
           <x>770</x>
@@ -782,7 +769,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="j">
+       <widget class="ClickLabel" name="j">
         <property name="geometry">
          <rect>
           <x>420</x>
@@ -798,7 +785,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="o">
+       <widget class="ClickLabel" name="o">
         <property name="geometry">
          <rect>
           <x>770</x>
@@ -814,7 +801,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="m">
+       <widget class="ClickLabel" name="m">
         <property name="geometry">
          <rect>
           <x>70</x>
@@ -830,7 +817,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="p">
+       <widget class="ClickLabel" name="p">
         <property name="geometry">
          <rect>
           <x>1120</x>
@@ -846,7 +833,7 @@
          <string/>
         </property>
        </widget>
-       <widget class="QLabel" name="n">
+       <widget class="ClickLabel" name="n">
         <property name="geometry">
          <rect>
           <x>420</x>
@@ -1068,9 +1055,52 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuOpen">
+     <property name="title">
+      <string>Open</string>
+     </property>
+     <addaction name="actionFile"/>
+     <addaction name="actionFolder"/>
+    </widget>
+    <addaction name="menuOpen"/>
+    <addaction name="actionExport"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionFile">
+   <property name="text">
+    <string>File</string>
+   </property>
+  </action>
+  <action name="actionFolder">
+   <property name="text">
+    <string>Folder</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ClickLabel</class>
+   <extends>QLabel</extends>
+   <header>clicklabel.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

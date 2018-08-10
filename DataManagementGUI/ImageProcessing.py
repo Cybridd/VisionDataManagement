@@ -40,6 +40,8 @@ def createCortex():
 def convertToPixmap(frame, x, y):
     if frame.shape[-1] == 3:
         frame = cv2.cvtColor(frame,cv2.cv2.COLOR_BGR2RGB)
+    #else:
+    #    frame = cv2.cvtColor(frame)
     converttoQtFormat = QImage(frame.data,frame.shape[1],frame.shape[0],QImage.Format_RGB888)
     pic = converttoQtFormat.scaled(x,y,Qt.KeepAspectRatio)
     pixmap = QPixmap.fromImage(pic)
