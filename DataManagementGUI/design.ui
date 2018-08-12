@@ -602,6 +602,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -617,6 +620,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -634,6 +640,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -649,6 +658,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -666,6 +678,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -681,6 +696,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -698,6 +716,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -713,6 +734,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -730,6 +754,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -745,6 +772,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -762,6 +792,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -777,6 +810,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -794,6 +830,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -809,6 +848,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
@@ -826,6 +868,9 @@
           <height>180</height>
          </rect>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -841,6 +886,9 @@
           <width>320</width>
           <height>180</height>
          </rect>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>

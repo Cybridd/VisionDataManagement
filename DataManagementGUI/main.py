@@ -139,6 +139,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.retinaButton.clicked[bool].connect(self.setRetinaEnabled)
         self.generateButton.clicked.connect(self.getVideoFrames)
         self.exportButton.clicked.connect(self.saveFileDialog)
+        self.saveButton.clicked.connect(self.saveMetaData)
+        self.deleteButton.clicked.connect(self.deleteFrame)
         self.actionExport.triggered.connect(self.saveFileDialog)
         self.actionFile.triggered.connect(self.openFileNameDialog)
         self.actionFolder.triggered.connect(self.openFolderDialog)
@@ -238,7 +240,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 #v.image = cv2.imdecode(backproject,0)
                 currentFrames.append(v)
         except KeyError:
-            print("There was a problem with the format of the hdf5 file")
+            raise Exception('HDF5Format')
         finally:
             return currentFrames
 
@@ -257,7 +259,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
         print(metadata.columns)
-        targettypes = dir(self.currentFrames[0])
+        #targettypes = dir(self.currentFrames[0])
 #        try:
             # we need a decision engine that decides what to do based on
             # csv headers, throwing an exception only when all options are exhausted
@@ -279,14 +281,15 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 #                colortype = metadata['colortype'].values # image and video file metadata
 #        except KeyError:
 #            self.showWarning('There was a problem with the format of the csv')
-
-        # load data into model here
-        for i in xrange(len(self.currentFrames)):
-            currentframe = self.currentFrames[i]
-            for column in metadata.columns:
-                if hasattr(currentframe, column):
-                    setattr(currentframe, column,metadata[column][i])
-
+        if self.currentFrames:
+            # load data into model here
+            for i in xrange(len(self.currentFrames)):
+                currentframe = self.currentFrames[i]
+                for column in metadata.columns:
+                    if hasattr(currentframe, column):
+                        setattr(currentframe, column,metadata[column][i])
+        else:
+            raise Exception('NoFrames')
 #            if datatype == 'ImageVector' or 'Image':
 #                currentframe.framenum = framenum[i]
 #                currentframe.timestamp = timestamp[i]
@@ -306,25 +309,36 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 #            self.showWarning('Please load images before loading metadata')
 
     def displayMetaData(self, framenum=0):
-        self.metadatamodel = QtGui.QStandardItemModel(self)
-        currentframe = self.currentFrames[framenum]
+        if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
+            self.metadatamodel = QtGui.QStandardItemModel(self)
+            currentframe = self.currentFrames[framenum]
 
-        labels = dir(self.currentFrames[0])
-        items = []
-        values = []
-        for label in labels:
-            item = QStandardItem(label)
-            item.setFlags(QtCore.Qt.ItemIsEnabled)
-            items.append(item)
-            value = QStandardItem(getattr(currentframe, label))
-            values.append(value)
+            labels = dir(self.currentFrames[0])
+            items = []
+            values = []
+            for label in labels:
+                item = QStandardItem(label)
+                item.setFlags(QtCore.Qt.ItemIsEnabled)
+                items.append(item)
+                value = QStandardItem(str(getattr(currentframe, label)))
+                values.append(value)
 
-        self.metadatamodel.appendColumn(items)
-        self.metadatamodel.appendColumn(values)
-        self.metadata.setModel(self.metadatamodel)
+            self.metadatamodel.appendColumn(items)
+            self.metadatamodel.appendColumn(values)
+            self.metadata.setModel(self.metadatamodel)
+
+    def saveMetaData(self, framenum):
+        currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
+        for i in xrange(self.metadatamodel.rowCount()):
+            field = str(self.metadatamodel.item(i,0).text())
+            value = str(self.metadatamodel.item(i,1).text())
+            if hasattr(currentframe, field):
+                print("Saving " + field + " as: " + value)
+                setattr(currentframe, field, value)
 
     def createImagesFromFolder(self):
         currentFrames = []
+        count = 1
         for root, dirs, files in os.walk(self.currentDir):
             for file in files:
                 print(file)
@@ -332,8 +346,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 if filetype in {'jpg','png'}:
                     print("Creating image")
                     image = cv2.imread(join(root,file))
-                    frame = Image(image=image,filepath=join(root,file))
+                    frame = Image(image=image,filepath=join(root,file),framenum=count)
                     currentFrames.append(frame)
+                    count += 1
         return currentFrames
 
     def getVideoFrames(self):
@@ -349,10 +364,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def setCurrentFrames(self, frames):
         self.currentFrames = frames
 
-    #Not currently in use
+    def getCurrentFrameNum(self):
+        for i in xrange(self.metadatamodel.rowCount()):
+            if self.metadatamodel.item(i,0).text() == 'framenum':
+                targetframe = int(self.metadatamodel.item(i,1).text())
+        return targetframe
+
+    def deleteFrame(self):
+        targetframenum = self.getCurrentFrameNum()
+        self.currentFrames = [f for f in self.currentFrames if f.framenum != targetframenum]
+        self.fillGallery()
+
     def saveFileDialog(self, isHDF5):
-        #options = QFileDialog.Options()
-        #options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
         filetype = fileName.split(".")[-1]
         if fileName:
@@ -415,7 +438,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         columns = ['_vector'] + dir(self.currentFrames[0])
         df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in self.currentFrames])
         # exported file should be read with ';' delimiter ONLY
-        df.to_csv(self.exportfilename,encoding='utf-8',sep=";")#compression='gzip'
+        df.to_csv(self.exportfilename,encoding='utf-8',sep=";") # compression='gzip'
 
 
     def setRetinaEnabled(self, event):
@@ -469,18 +492,25 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.labels[i].clicked.connect(self.displayMetaData)
                 print("Setting framenum")
                 self.numbers[i].display(currentframe.framenum)
+            else:
+                self.labels[i].clear()
+                self.labels[i].setIndex(-1)
+                self.numbers[i].display(0)
         self.displayMetaData()
 
     def showWarning(self, error):
+        messagekey = str(error[1])
         messages = {
         'exceptions.IndexError' : 'There is an inequal number of images and metadata records',
-        'exceptions.KeyError' : 'Please load images before loading metadata',
+        '1L' : 'There was a problem with the format of the metadata',
+        'NoFrames' : 'Please load images before loading metadata',
+        'HDF5Format' : 'There was a problem with the format of the HDF5 file'
         }
         errormessage = QMessageBox(parent=None)
         errormessage.setStandardButtons(QMessageBox.Ok)
         errormessage.setWindowTitle('Warning')
         errormessage.setIcon(QMessageBox.Warning)
-        errormessage.setText("Oops!")# messages[str(error[1])]
+        errormessage.setText(messages[messagekey])
         errormessage.exec_()
 
     def closeApp(self):

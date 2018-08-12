@@ -76,8 +76,6 @@ class Video(object):
         return self.frames
 
     def saveFramesImageOnly(self):
-        #out = cv2.VideoWriter()
-        #cv2.imshow("test", self.frames[0].image)
         frames_dir = join(self.filepath.split("/")[0], "Frames")
         if not os.path.exists(frames_dir):
             os.makedirs(frames_dir)
