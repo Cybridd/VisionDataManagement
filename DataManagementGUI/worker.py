@@ -34,7 +34,7 @@ class Worker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(result)
+            self.signals.finished.emit()
         finally:
             end = time.time()
             print("This operation required " + str(end - start) + " seconds.")
-            self.signals.finished.emit()

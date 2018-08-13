@@ -179,8 +179,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 worker = Worker(self.loadNpy)
                 worker.signals.result.connect(self.setCurrentFrames)
                 worker.signals.finished.connect(self.fillGallery)
+                worker.signals.error.connect(self.showWarning)
                 self.threadpool.start(worker)
-                self.infoLabel.setText("File opened: "+ fileName)
                 self.generateButton.setText("Loading...")
                 self.generateButton.setDisabled(True)
                 self.verticalSlider_3.valueChanged.connect(self.fillGallery)
@@ -188,13 +188,15 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.currentFile = fileName
                 worker = Worker(self.loadPickle)
                 worker.signals.result.connect(self.setCurrentFrames)
+                worker.signals.error.connect(self.showWarning)
                 worker.signals.finished.connect(self.fillGallery)
                 self.threadpool.start(worker)
             elif filetype == 'h5':
                 self.currentFile = fileName
                 worker = Worker(self.loadhdf5)
                 worker.signals.result.connect(self.setCurrentFrames)
-                #worker.signals.finished.connect(self.fillGallery)
+                worker.signals.error.connect(self.showWarning)
+                worker.signals.finished.connect(self.fillGallery)
                 self.threadpool.start(worker)
             else:
                 self.showWarning('File type not supported')
@@ -208,6 +210,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.currentDir = datadir
             worker = Worker(self.createImagesFromFolder)
             worker.signals.result.connect(self.setCurrentFrames)
+            worker.signals.error.connect(self.showWarning)
             worker.signals.finished.connect(self.fillGallery)
             self.threadpool.start(worker)
             self.infoLabel.setText("Folder opened: "+ self.currentDir)
@@ -219,30 +222,27 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         currentFrames = []
         hdf5_open = h5py.File(self.currentFile, mode="r")
         R = ImageProcessing.startRetina()
-        try:
+        if 'vector' in hdf5_open.keys():
             for i in range(len(hdf5_open['vector'])):
                 if 'retinatype' in hdf5_open.keys():
                     v = ImageVector(vector=hdf5_open['vector'][i],
-                        framenum=hdf5_open['framenum'][i],
+                        framenum=int(hdf5_open['framenum'][i]),
                         timestamp=hdf5_open['timestamp'][i],
                         label=hdf5_open['label'][i],
-                        fixationy=hdf5_open['fixationy'][i],
-                        fixationx=hdf5_open['fixationx'][i],
+                        fixationy=int(hdf5_open['fixationy'][i]),
+                        fixationx=int(hdf5_open['fixationx'][i]),
                         retinatype=hdf5_open['retinatype'][i])
                 else:
                     v = ImageVector(vector=hdf5_open['vector'][i])
                 print(v._vector.shape)
-                shape = [720,1280,1]#v._vector.shape[-1]
-                #R.prepare(shape,fix=(v.fixationy,v.fixationx))
+                backshape = [720,1280,1] # make dynamic for GRAY or BGR
                 print("Adding backprojected image to model")
-                #v.image = R.backproject(v._vector,fix=(v.fixationy,v.fixationx),shape=shape)
-                #print(v.image.shape)
-                #v.image = cv2.imdecode(backproject,0)
+                v.image = R.backproject(v._vector,fix=(v.fixationy,v.fixationx),shape=backshape)
+                print(v.image.shape)
                 currentFrames.append(v)
-        except KeyError:
+        else:
             raise Exception('HDF5Format')
-        finally:
-            return currentFrames
+        return currentFrames
 
     def loadNpy(self):
         currentFrames = []
@@ -258,29 +258,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def loadCsv(self):
         metadata = pd.read_csv(self.metaFileName,delimiter=";",encoding="utf-8")
-        print(metadata.columns)
-        #targettypes = dir(self.currentFrames[0])
-#        try:
-            # we need a decision engine that decides what to do based on
-            # csv headers, throwing an exception only when all options are exhausted
-#            datatype = type(self.currentFrames[0])
-#            if datatype == 'ImageVector' or 'Image':
-#                # image and vector metadata
-#                framenum = metadata['framenum'].values
-#                timestamp = metadata['timestamp'].values
-#                label = metadata['label'].values
-#            if datatype == 'ImageVector':
-#                # vector only metadata
-#                vector = metadata['vector'].values
-#                fixationy = metadata['fixationy'].values
-#                fixationx = metadata['fixationx'].values
-#                retinatype = metadata['retinatype'].values
-#            elif datatype == 'Image':
-#                # image file metadata
-#                parentfile = metadata['parentfile'].values
-#                colortype = metadata['colortype'].values # image and video file metadata
-#        except KeyError:
-#            self.showWarning('There was a problem with the format of the csv')
         if self.currentFrames:
             # load data into model here
             for i in xrange(len(self.currentFrames)):
@@ -290,23 +267,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                         setattr(currentframe, column,metadata[column][i])
         else:
             raise Exception('NoFrames')
-#            if datatype == 'ImageVector' or 'Image':
-#                currentframe.framenum = framenum[i]
-#                currentframe.timestamp = timestamp[i]
-#                currentframe.label = label[i]
-#            if datatype == 'ImageVector':
-#                currentframe.vector = vector[i]
-#                currentframe.fixationy = fixationy[i]
-#                currentframe.fixationx = fixationx[i]
-#                currentframe.retinatype = retinatype[i]
-#            if datatype == 'Image':
-#                currentframe.parent = parentfile[i]
-#                currentframe.colortype = colortype[i] # also for Video
-
-#        except IndexError:
-#            self.showWarning('There is an inequal number of images and metadata records')
-#        except TypeError:
-#            self.showWarning('Please load images before loading metadata')
 
     def displayMetaData(self, framenum=0):
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
@@ -326,6 +286,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadatamodel.appendColumn(items)
             self.metadatamodel.appendColumn(values)
             self.metadata.setModel(self.metadatamodel)
+
+            self.biglabel.setPixmap(ImageProcessing.convertToPixmap(currentframe.image,1280,720))
 
     def saveMetaData(self, framenum):
         currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
@@ -413,8 +375,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             fixationX.append(currentframe.fixationx)
             retinatypes.append(currentframe.retinatype)
 
-        #datatype = type(self.currentFrames[0].vector[0])
-        #print(datatype)
         hdf5_file.create_dataset("vector",(len(vectors),len(currentframe._vector)),np.float64)
         hdf5_file.create_dataset("label",(len(labels),1),np.int8)
         hdf5_file.create_dataset("framenum",(len(labels),1),np.int8)
@@ -439,7 +399,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in self.currentFrames])
         # exported file should be read with ';' delimiter ONLY
         df.to_csv(self.exportfilename,encoding='utf-8',sep=";") # compression='gzip'
-
 
     def setRetinaEnabled(self, event):
         if event:
@@ -487,6 +446,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 tempindex = i + (16 * self.verticalSlider_3.value())
                 currentframe = self.currentFrames[tempindex]
                 print("Setting pixmap")
+                print(currentframe.image.shape)
                 self.labels[i].setPixmap(ImageProcessing.convertToPixmap(currentframe.image,320,180))
                 self.labels[i].setIndex(tempindex)
                 self.labels[i].clicked.connect(self.displayMetaData)
