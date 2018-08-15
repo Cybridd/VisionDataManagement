@@ -9,7 +9,9 @@ class Image(object):
 
     def __init__(self,image=None,name=None,filepath=None,colortype=None,parent=None,framenum=None,label=None):
         self.vector = None
+        self.type = None
         self.image = image
+        self.name = name
         if filepath:
             self.name = filepath.split("/")[-1]
             self.type = filepath.split('.')[-1]
