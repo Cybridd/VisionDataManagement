@@ -6,7 +6,7 @@ from PyQt5 import QtGui, QtCore
 from QtGui import QImage, QPixmap
 from QtCore import Qt
 from os.path import join
-from model import Image as im, Video as vid
+from model import Image, Video
 from retinavision.retina import Retina
 from retinavision.cortex import Cortex
 from retinavision import datadir, utils
@@ -26,8 +26,9 @@ def startRetina():
     retina.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
     return retina
 
-def getBackProjection(R,V,shape,fix):
-    return R.backproject(V,shape,fix)
+def getBackProjection(R,V,fix):
+    backshape = [720,1280,V.shape[-1]] # fixed size for the case of this app
+    return R.backproject(V,backshape,fix)
 
 def createCortex():
     cortex = Cortex()
@@ -49,16 +50,17 @@ def convertToPixmap(frame, x, y):
     return pixmap
 
 # moved into main, may leave there
-def createImagesFromFolder(currentdir):
+def createImagesFromFolder(currentDir):
     currentFrames = []
-    for root, dirs, files in os.walk(currentdir):
-        path = root.split(os.sep)
+    count = 1
+    for root, dirs, files in os.walk(currentDir):
         for file in files:
             print(file)
             filetype = file.split(".")[-1]
             if filetype in {'jpg','png'}:
                 print("Creating image")
                 image = cv2.imread(join(root,file))
-                frame = im.Image(image=image,filepath=join(root,file))
+                frame = Image(image=image,filepath=join(root,file),framenum=count)
                 currentFrames.append(frame)
+                count += 1
     return currentFrames

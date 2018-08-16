@@ -6,7 +6,8 @@ import time
 import numpy as np
 import pandas as pd
 import h5py
-import ImageProcessing
+import processing as ip
+from customwidgets import VideoPlayer
 from os.path import join
 from model import Image, ImageVector, Video
 from worker import Worker
@@ -18,119 +19,6 @@ from QtWidgets import *
 
 #TODO metadata editing, deleting files, export for DCNN,
 # Give to Worker - Image/Video object creation, image saving/exporting, display updating
-
-class VideoPlayer(QWidget):
-
-    video = None
-    videoFrame = None
-    focalFrame = None
-    corticalFrame = None
-    focusFrame = None
-    framePos = 0
-    maxFrames = 0
-    retina = None
-    cortex = None
-    fixation = None
-    filetypes = {
-        'mp4': 'mp4v',
-        'jpg': 'jpeg',
-        'avi': 'xvid'
-    }
-
-    def __init__(self,file,isRetinaEnabled,parent,webcammode=False):
-        super(QWidget,self).__init__()
-        self.parent = parent
-        self.isVideo = False
-        self.webcam = webcammode
-        if file:
-            self.file = file
-            self.isVideo = isinstance(file,Video) # self.file.split(".")[-1] in self.filetypes.keys()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.nextFrame)
-        self.frames = parent.currentFrames
-        if self.isVideo:
-            self.cap = cv2.VideoCapture(self.file.filepath)
-            codec = cv2.VideoWriter_fourcc(*self.filetypes[self.file.type])
-            self.cap.set(cv2.CAP_PROP_FOURCC, codec)
-            self.maxFrames = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            self.parent.scrubSlider.setRange(0,self.maxFrames)
-        elif self.webcam:
-            self.cap = cv2.VideoCapture(0)
-            self.timer.start(1000.0/30)
-        else:
-            self.maxFrames = len(self.frames) - 1
-        self.framePos = 0
-        self.videoFrame = parent.label
-        self.focalFrame = parent.focallabel
-        self.corticalFrame = parent.corticallabel
-        self.focusFrame = parent.biglabel
-        if isRetinaEnabled:
-            self.retina, self.fixation = ImageProcessing.prepareLiveRetina(self.cap)
-            self.cortex = ImageProcessing.createCortex()
-
-
-    def nextFrame(self):
-        if self.isVideo or self.webcam:
-            ret, frame = self.cap.read()
-            if ret:
-                self.framePos = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
-                self.updateDisplay(frame)
-        else:
-            self.framePos += 1 if self.framePos < self.maxFrames else 0
-            self.setCurrent()
-
-    def start(self):
-        self.timer.start(1000.0/30)
-        self.parent.startButton.setDisabled(True)
-        self.parent.startButton_2.setDisabled(True)
-        self.parent.pauseButton.setDisabled(False)
-        self.parent.pauseButton_2.setDisabled(False)
-
-    def pause(self):
-        self.timer.stop()
-        self.parent.pauseButton.setDisabled(True)
-        self.parent.pauseButton_2.setDisabled(True)
-        self.parent.startButton.setDisabled(False)
-        self.parent.startButton_2.setDisabled(False)
-
-    def setCurrent(self):
-        if self.framePos <= self.maxFrames:
-            if self.isVideo:
-                self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
-            else:
-                currentframe = self.frames[self.framePos]
-                self.updateDisplay(currentframe.image)
-
-    def skip(self, framePos):
-        self.framePos = framePos
-        self.setCurrent()
-
-    def skipBck(self):
-        self.framePos = self.framePos - 1 if self.framePos > 0 else 0
-        self.setCurrent()
-
-    def skipFwd(self):
-        self.framePos = self.framePos + 1 if self.framePos < self.maxFrames else 0
-        self.setCurrent()
-
-    def updateDisplay(self, frame):
-        print("update display called")
-        self.parent.scrubSlider.setValue(self.framePos)
-        self.parent.scrubSlider_2.setValue(self.framePos)
-        self.parent.frameNum.display(self.framePos)
-        self.parent.frameNum_2.display(self.framePos)
-        self.parent.displayMetaData(self.framePos)
-        self.videoFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 480, 360))
-        if self.retina:
-            v = self.retina.sample(frame,self.fixation)
-            print(frame.shape)
-            tight = self.retina.backproject_last()
-            cortical = self.cortex.cort_img(v)
-            self.focalFrame.setPixmap(ImageProcessing.convertToPixmap(tight, 480, 360))
-            self.corticalFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 480, 360))
-            self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(cortical, 1280, 720))
-        else:
-            self.focusFrame.setPixmap(ImageProcessing.convertToPixmap(frame, 1280, 720))
 
 class DMApp(QMainWindow, design.Ui_MainWindow):
 
@@ -207,8 +95,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         else:
             self.showWarning('FileType')
 
-    def startWorker(self,func,resultfunc=None,finishedfunc=None):
-        worker = Worker(func)
+    def startWorker(self,func,resultfunc=None,finishedfunc=None,args=None):
+        worker = Worker(func,args)
         if resultfunc: worker.signals.result.connect(resultfunc)
         if finishedfunc: worker.signals.finished.connect(finishedfunc)
         worker.signals.error.connect(self.showWarning)
@@ -221,20 +109,21 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         if datadir:
             print("Directory opened:" + datadir)
             self.currentDir = datadir
-            self.startWorker(self.createImagesFromFolder,self.setCurrentFrames,self.fillGallery)
+            self.startWorker(ip.createImagesFromFolder,self.setCurrentFrames,self.fillGallery,self.currentDir)
             self.infoLabel.setText("Folder opened: "+ self.currentDir)
             self.generateButton.setText("Loading...")
             self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
     def loadhdf5(self):
-        currentFrames = []
+        currentFrames = self.currentFrames if self.currentFrames else []
         hdf5_open = h5py.File(self.currentFile, mode="r")
-        R = ImageProcessing.startRetina()
+        R = ip.startRetina()
+        if R._cudaRetina: print("Using CUDA")
         print(hdf5_open.keys())
         count = 1
         if 'vector' in hdf5_open.keys():
-            for i in range(len(hdf5_open['vector'])):
+            for i in xrange(len(hdf5_open['vector'])):
                 if 'retinatype' in hdf5_open.keys():
                     v = ImageVector(vector=hdf5_open['vector'][i],
                         label=hdf5_open['label'][i],
@@ -247,9 +136,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
                 count += 1
                 print(v._vector.shape)
-                backshape = [720,1280,1] # make dynamic for GRAY or BGR
                 print("Adding backprojected image to model")
-                v.image = R.backproject(v._vector,fix=(v.fixationy,v.fixationx),shape=backshape)
+                v.image = ip.getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
                 print(v.image.shape)
                 currentFrames.append(v)
         else:
@@ -270,10 +158,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def loadCsv(self):
         metadata = pd.read_csv(self.metafilename,delimiter=";",encoding="utf-8")
-        if self.currentFrames:
+        currentFrames = self.currentFrames if self.currentFrames else []
+        print(metadata.shape)
+        if 'vector' not in metadata.columns and not self.currentFrames:
+            raise Exception('NoFrames')
+        elif 'vector' not in metadata.columns:
             # load data into model here
-            for i in xrange(len(self.currentFrames)):
-                currentframe = self.currentFrames[i]
+            for i in xrange(len(currentFrames)):
+                currentframe = currentFrames[i]
                 for column in metadata.columns:
                     if hasattr(currentframe, column):
                         if column == 'framenum':
@@ -281,10 +173,27 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                                 val = int(metadata[column][i])
                             except ValueError:
                                 raise Exception('InvalidFrameNum')
-                        setattr(currentframe, column,metadata[column][i])
+                        setattr(currentframe,column,metadata[column][i])
         else:
-            raise Exception('NoFrames')
+            # create new vector objects
+            R = ip.startRetina()
+            for i in xrange(metadata.shape[0]):
+                currentrow = metadata.iloc(i)
+                vector = [n.strip() for n in currentrow['vector']]
+                v = ImageVector(vector=vector)
+                for column in currentrow:
+                    if hasattr(v, column):
+                        if column == 'framenum':
+                            try:
+                                currentrow[column] = int(currentrow[column])
+                            except ValueError:
+                                raise Exception('InvalidFrameNum')
+                        setattr(v, column,currentrow[column])
+                v.image = ip.getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
+                currentframes.append(currentframe)
+            return currentframes
 
+        #
     def displayMetaData(self,framenum=0):
         print("displayMetaData called")
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
@@ -305,7 +214,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadatamodel.appendColumn(values)
             self.metadata.setModel(self.metadatamodel)
 
-            self.biglabel.setPixmap(ImageProcessing.convertToPixmap(currentframe.image,1280,720))
+            self.biglabel.setPixmap(ip.convertToPixmap(currentframe.image,1280,720))
 
     def saveMetaData(self,framenum):
         currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
@@ -338,10 +247,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def getVideoFrames(self):
         if self.currentFile:
-            worker = Worker(self.currentFile.getFrames)
-            worker.signals.result.connect(self.setCurrentFrames)
-            worker.signals.finished.connect(self.fillGallery)
-            self.threadpool.start(worker)
+            self.startWorker(self.currentFile.getFrames,self.setCurrentFrames,self.fillGallery)
             self.generateButton.setText("Generating...")
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
             self.generateButton.setDisabled(True)
@@ -422,7 +328,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         columns = ['_vector'] + dir(self.currentFrames[0])
         df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in self.currentFrames])
         # exported file should be read with ';' delimiter ONLY
-        df.to_csv(self.exportfilename,encoding='utf-8',sep=";") # compression='gzip'
+        df.to_csv(self.exportfilename,encoding='utf-8',sep=";") # compression='gzip'?
 
     def setRetinaEnabled(self, event):
         if event:
@@ -471,7 +377,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 currentframe = self.currentFrames[tempindex]
                 print("Setting pixmap")
                 print(currentframe.image.shape)
-                self.labels[i].setPixmap(ImageProcessing.convertToPixmap(currentframe.image,320,180))
+                self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                 self.labels[i].setIndex(tempindex)
                 self.labels[i].clicked.connect(self.displayMetaData)
                 print("Setting framenum")
