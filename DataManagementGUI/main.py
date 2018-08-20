@@ -33,6 +33,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     posFile = None
     videoPlayer = None
     isRetinaEnabled = False
+    highlightedframes = []
     videofiletypes = {'mp4','avi'}
     metadatatypes = {'csv','json'}
     rawvectortypes = {'npy','npz'}
@@ -80,27 +81,22 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.startVideoPlayer()
         elif filetype in self.metadatatypes:
             self.metafilename = filename
-            self.startWorker(self.loadCsv,self.displayMetaData)
-        elif filetype in self.rawvectortypes:
-            self.currentFile = filename
-            self.startWorker(self.loadNpy,self.setCurrentFrames,self.fillGallery)
-            self.generateButton.setDisabled(True)
-            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
-        elif filetype == 'pkl':
-            self.currentFile = filename
-            self.startWorker(self.loadPickle,self.setCurrentFrames,self.fillGallery)
+            self.startWorker(ip.loadCsv,self.setCurrentFrames,self.fillGallery,
+                self.metafilename,self.currentFrames)
+#        elif filetype in self.rawvectortypes:
+#            self.currentFile = filename
+#            self.startWorker(self.loadNpy,self.setCurrentFrames,self.fillGallery)
+#            self.generateButton.setDisabled(True)
+#            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+#        elif filetype == 'pkl':
+#            self.currentFile = filename
+#            self.startWorker(self.loadPickle,self.setCurrentFrames,self.fillGallery)
         elif filetype == 'h5':
             self.currentFile = filename
-            self.startWorker(self.loadhdf5,self.setCurrentFrames,self.fillGallery)
+            self.startWorker(ip.loadhdf5,self.setCurrentFrames,self.fillGallery,
+                self.currentFile,self.currentFrames)
         else:
-            self.showWarning('FileType')
-
-    def startWorker(self,func,resultfunc=None,finishedfunc=None,args=None):
-        worker = Worker(func,args)
-        if resultfunc: worker.signals.result.connect(resultfunc)
-        if finishedfunc: worker.signals.finished.connect(finishedfunc)
-        worker.signals.error.connect(self.showWarning)
-        self.threadpool.start(worker)
+            raise Exception('FileType')
 
     def openFolderDialog(self):
         options = QFileDialog.Options()
@@ -109,40 +105,19 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         if datadir:
             print("Directory opened:" + datadir)
             self.currentDir = datadir
-            self.startWorker(ip.createImagesFromFolder,self.setCurrentFrames,self.fillGallery,self.currentDir)
+            self.startWorker(ip.createImagesFromFolder,self.setCurrentFrames,
+                self.fillGallery,self.currentDir)
             self.infoLabel.setText("Folder opened: "+ self.currentDir)
             self.generateButton.setText("Loading...")
             self.generateButton.setDisabled(True)
             self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
-    def loadhdf5(self):
-        currentFrames = self.currentFrames if self.currentFrames else []
-        hdf5_open = h5py.File(self.currentFile, mode="r")
-        R = ip.startRetina()
-        if R._cudaRetina: print("Using CUDA")
-        print(hdf5_open.keys())
-        count = 1
-        if 'vector' in hdf5_open.keys():
-            for i in xrange(len(hdf5_open['vector'])):
-                if 'retinatype' in hdf5_open.keys():
-                    v = ImageVector(vector=hdf5_open['vector'][i],
-                        label=hdf5_open['label'][i],
-                        fixationy=int(hdf5_open['fixationy'][i]),
-                        fixationx=int(hdf5_open['fixationx'][i]),
-                        retinatype=hdf5_open['retinatype'][i])
-                else:
-                    v = ImageVector(vector=hdf5_open['vector'][i])
-                v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
-                v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
-                count += 1
-                print(v._vector.shape)
-                print("Adding backprojected image to model")
-                v.image = ip.getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
-                print(v.image.shape)
-                currentFrames.append(v)
-        else:
-            raise Exception('HDF5Format')
-        return currentFrames
+    def startWorker(self,func,resultfunc=None,finishedfunc=None,*args):
+        worker = Worker(func,*args)
+        if resultfunc: worker.signals.result.connect(resultfunc)
+        if finishedfunc: worker.signals.finished.connect(finishedfunc)
+        worker.signals.error.connect(self.showWarning)
+        self.threadpool.start(worker)
 
     def loadNpy(self):
         currentFrames = []
@@ -193,10 +168,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 currentframes.append(currentframe)
             return currentframes
 
-        #
-    def displayMetaData(self,framenum=0):
+    def displayMetaData(self,framenum=0): #highlighted=False,
         print("displayMetaData called")
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
+            print("WE doin it")
             self.metadatamodel = QtGui.QStandardItemModel(self)
             currentframe = self.currentFrames[framenum]
 
@@ -215,35 +190,32 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadata.setModel(self.metadatamodel)
 
             self.biglabel.setPixmap(ip.convertToPixmap(currentframe.image,1280,720))
+            self.highlightedframes.append(currentframe.framenum)
+        #if highlighted:
+        #    self.highlightedframes.append(framenum)
+        #elif framenum in self.highlightedframes:
+        #    self.highlightedframes.remove(framenum)
+
+    def removeHighlighted(self,framenum):
+        if framenum in self.highlightedframes:
+            self.highlightedframes.remove(framenum)
 
     def saveMetaData(self,framenum):
-        currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
-        for i in xrange(self.metadatamodel.rowCount()):
-            field = str(self.metadatamodel.item(i,0).text())
-            value = str(self.metadatamodel.item(i,1).text())
-            if field == 'framenum':
-                try:
-                    val = int(value)
-                except ValueError:
-                    raise Exception('InvalidFrameNum')
-            if hasattr(currentframe, field):
-                print("Saving " + field + " as: " + value)
-                setattr(currentframe, field, value)
-
-    def createImagesFromFolder(self):
-        currentFrames = []
-        count = 1
-        for root, dirs, files in os.walk(self.currentDir):
-            for file in files:
-                print(file)
-                filetype = file.split(".")[-1]
-                if filetype in {'jpg','png'}:
-                    print("Creating image")
-                    image = cv2.imread(join(root,file))
-                    frame = Image(image=image,filepath=join(root,file),framenum=count)
-                    currentFrames.append(frame)
-                    count += 1
-        return currentFrames
+        #currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
+        currentframes = [f for f in self.currentFrames if f.framenum in self.highlightedframes]
+        print(len(currentframes))
+        for currentframe in currentframes:
+            for i in xrange(self.metadatamodel.rowCount()):
+                field = str(self.metadatamodel.item(i,0).text())
+                value = str(self.metadatamodel.item(i,1).text())
+                if field == 'framenum':
+                    try:
+                        val = int(value)
+                    except ValueError:
+                        raise Exception('InvalidFrameNum')
+                if hasattr(currentframe, field):
+                    print("Saving " + field + " as: " + value)
+                    setattr(currentframe, field, value)
 
     def getVideoFrames(self):
         if self.currentFile:
@@ -267,7 +239,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.currentFrames = [f for f in self.currentFrames if f.framenum != targetframenum]
         self.fillGallery()
 
-    def saveFileDialog(self,isHDF5):
+    def saveFileDialog(self):
         fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
         filetype = fileName.split(".")[-1]
         if fileName:
@@ -275,60 +247,20 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             if filetype == 'pkl':
                 utils.writePickle(fileName, self.currentFrames)
             elif filetype == 'h5':
-                worker = Worker(self.saveHDF5)
-                self.threadpool.start(worker)
+                self.startWorker(ip.saveHDF5,None,self.generateButton.setText("Done!"),
+                    self.exportfilename,self.currentFrames)
                 self.generateButton.setText("Saving to HDF5...")
             elif filetype == 'csv':
-                worker = Worker(self.saveCSV)
-                self.threadpool.start(worker)
+                self.startWorker(ip.saveCSV,None,None,self.exportfilename,self.currentFrames)
                 self.generateButton.setText("Saving to CSV...")
             else:
-                print("Invalid file type")
+                raise Exception('FileType')
 
     def saveToNpy(self):
         list = []
         for frame in self.currentFrames:
             list.append(frame.image)
         np.savez_compressed('testnpy',list)
-
-    def saveHDF5(self):
-        vectors, labels, framenums, timestamps, fixationY, fixationX, retinatypes = ([] for i in range(7))
-        hdf5_file = h5py.File(self.exportfilename, mode='w')
-        currentframe = None
-        for i in xrange(len(self.currentFrames)):
-            currentframe = self.currentFrames[i]
-            vectors.append(currentframe._vector)
-            labels.append(currentframe.label)
-            framenums.append(currentframe.framenum)
-            timestamps.append(currentframe._timestamp)
-            fixationY.append(currentframe.fixationy)
-            fixationX.append(currentframe.fixationx)
-            retinatypes.append(currentframe.retinatype)
-
-        hdf5_file.create_dataset("vector",(len(vectors),len(currentframe._vector)),np.float64)
-        hdf5_file.create_dataset("label",(len(labels),1),np.int8)
-        hdf5_file.create_dataset("framenum",(len(labels),1),np.int8)
-        hdf5_file.create_dataset("timestamp",(len(labels),1),np.int8)
-        hdf5_file.create_dataset("fixationy",(len(labels),1),np.int8)
-        hdf5_file.create_dataset("fixationx",(len(labels),1),np.int8)
-        hdf5_file.create_dataset("retinatype",(len(labels),1),np.int8)
-
-        for i in xrange(len(vectors)):
-            hdf5_file["vector"][i] = vectors[i]
-            hdf5_file["label"][i] = labels[i]
-            hdf5_file["framenum"][i] = framenums[i]
-            hdf5_file["timestamp"][i] = timestamps[i]
-            hdf5_file["fixationy"][i] = fixationY[i]
-            hdf5_file["fixationx"][i] = fixationX[i]
-            hdf5_file["retinatype"][i] = retinatypes[i]
-
-        hdf5_file.close()
-
-    def saveCSV(self):
-        columns = ['_vector'] + dir(self.currentFrames[0])
-        df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in self.currentFrames])
-        # exported file should be read with ';' delimiter ONLY
-        df.to_csv(self.exportfilename,encoding='utf-8',sep=";") # compression='gzip'?
 
     def setRetinaEnabled(self, event):
         if event:
@@ -380,6 +312,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                 self.labels[i].setIndex(tempindex)
                 self.labels[i].clicked.connect(self.displayMetaData)
+                #self.labels[i].unhighlighted.connect(self.removeHighlighted)
                 print("Setting framenum")
                 self.numbers[i].display(currentframe.framenum)
             else:

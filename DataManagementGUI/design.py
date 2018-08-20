@@ -401,4 +401,4 @@ class Ui_MainWindow(object):
         self.actionFile.setText(_translate("MainWindow", "File"))
         self.actionFolder.setText(_translate("MainWindow", "Folder"))
 
-from clicklabel import ClickLabel
+from customwidgets import ClickLabel

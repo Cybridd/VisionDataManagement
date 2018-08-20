@@ -6,7 +6,9 @@ import processing as ip
 import cv2
 
 class ClickLabel(QLabel):
+
     clicked=pyqtSignal(int)
+    unhighlighted=pyqtSignal(int)
 
     def __init__(self, parent=None, index=0):
         QLabel.__init__(self, parent)
@@ -14,14 +16,16 @@ class ClickLabel(QLabel):
         self.highlighted = False
 
     def mousePressEvent(self, event):
-        self.clicked.emit(self.index)
+        #self.clicked.emit(self.index)
         self.highlighted = not self.highlighted
         if self.highlighted:
             self.setFrameShape(QtWidgets.QFrame.Box)
             self.setLineWidth(3)
+            self.clicked.emit(self.index)
         else:
             self.setFrameShape(QtWidgets.QFrame.StyledPanel)
             self.setLineWidth(1)
+            self.unhighlighted.emit(self.index)
 
     def setIndex(self, index):
         self.index = index
