@@ -52,6 +52,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.actionExport.triggered.connect(self.saveFileDialog)
         self.actionFile.triggered.connect(self.openFileNameDialog)
         self.actionFolder.triggered.connect(self.openFolderDialog)
+        self.actionClose.triggered.connect(self.closeFile)
+        self.actionSelect_All.triggered.connect(self.selectAll)
+        self.actionDelete_Selection.triggered.connect(self.deleteFrame)
         self.actionExit.triggered.connect(self.closeApp)
         self.labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
         self.labels.sort(key=lambda label: label.objectName())
@@ -131,47 +134,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def loadPickle(self):
         return utils.loadPickle(self.currentFile)
 
-    def loadCsv(self):
-        metadata = pd.read_csv(self.metafilename,delimiter=";",encoding="utf-8")
-        currentFrames = self.currentFrames if self.currentFrames else []
-        print(metadata.shape)
-        if 'vector' not in metadata.columns and not self.currentFrames:
-            raise Exception('NoFrames')
-        elif 'vector' not in metadata.columns:
-            # load data into model here
-            for i in xrange(len(currentFrames)):
-                currentframe = currentFrames[i]
-                for column in metadata.columns:
-                    if hasattr(currentframe, column):
-                        if column == 'framenum':
-                            try:
-                                val = int(metadata[column][i])
-                            except ValueError:
-                                raise Exception('InvalidFrameNum')
-                        setattr(currentframe,column,metadata[column][i])
-        else:
-            # create new vector objects
-            R = ip.startRetina()
-            for i in xrange(metadata.shape[0]):
-                currentrow = metadata.iloc(i)
-                vector = [n.strip() for n in currentrow['vector']]
-                v = ImageVector(vector=vector)
-                for column in currentrow:
-                    if hasattr(v, column):
-                        if column == 'framenum':
-                            try:
-                                currentrow[column] = int(currentrow[column])
-                            except ValueError:
-                                raise Exception('InvalidFrameNum')
-                        setattr(v, column,currentrow[column])
-                v.image = ip.getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
-                currentframes.append(currentframe)
-            return currentframes
-
-    def displayMetaData(self,framenum=0): #highlighted=False,
-        print("displayMetaData called")
+    def displayMetaData(self,framenum=0):
+        #print("displayMetaData called")
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
-            print("WE doin it")
+            #print("We doin it")
             self.metadatamodel = QtGui.QStandardItemModel(self)
             currentframe = self.currentFrames[framenum]
 
@@ -190,32 +156,26 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadata.setModel(self.metadatamodel)
 
             self.biglabel.setPixmap(ip.convertToPixmap(currentframe.image,1280,720))
-            self.highlightedframes.append(currentframe.framenum)
-        #if highlighted:
-        #    self.highlightedframes.append(framenum)
-        #elif framenum in self.highlightedframes:
-        #    self.highlightedframes.remove(framenum)
+            self.highlightedframes.append(int(framenum))
 
     def removeHighlighted(self,framenum):
+        print("highlighted frames" + ''.join(str(e) for e in self.highlightedframes))
+        print("remove called")
         if framenum in self.highlightedframes:
+            print("removing " + str(framenum))
             self.highlightedframes.remove(framenum)
 
     def saveMetaData(self,framenum):
-        #currentframe = next((f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()), None)
-        currentframes = [f for f in self.currentFrames if f.framenum in self.highlightedframes]
-        print(len(currentframes))
-        for currentframe in currentframes:
+        if self.maintabWidget.currentIndex() == 2:
+            targetframes = [self.currentFrames[i] for i in self.highlightedframes]
+        else:
+            targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
+        for targetframe in targetframes:
             for i in xrange(self.metadatamodel.rowCount()):
                 field = str(self.metadatamodel.item(i,0).text())
                 value = str(self.metadatamodel.item(i,1).text())
-                if field == 'framenum':
-                    try:
-                        val = int(value)
-                    except ValueError:
-                        raise Exception('InvalidFrameNum')
-                if hasattr(currentframe, field):
-                    print("Saving " + field + " as: " + value)
-                    setattr(currentframe, field, value)
+                if field == 'label':
+                    setattr(targetframe, field, value)
 
     def getVideoFrames(self):
         if self.currentFile:
@@ -228,16 +188,44 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.currentFrames = frames
         self.startVideoPlayer()
 
-    def getCurrentFrameNum(self):
+    def getCurrenútFrameNum(self):
         for i in xrange(self.metadatamodel.rowCount()):
             if self.metadatamodel.item(i,0).text() == 'framenum':
                 targetframe = int(self.metadatamodel.item(i,1).text())
         return targetframe
 
+    def selectAll(self):
+        for label in self.labels:
+            if label.pixmap:
+                label.makeHighlighted()
+        self.maintabWidget.setCurrentIndex(2)
+        self.highlightedframes = range(len(self.currentFrames))
+
     def deleteFrame(self):
-        targetframenum = self.getCurrentFrameNum()
-        self.currentFrames = [f for f in self.currentFrames if f.framenum != targetframenum]
+        if self.maintabWidget.currentIndex() == 2:
+            print("Target frames: " + ''.join(str(e) for e in self.highlightedframes))
+            targetframes = [self.currentFrames[i] for i in self.highlightedframes]
+        else:
+            targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
+        self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
+        for i in self.highlightedframes:
+            self.labels[i/16 + i].notHighlighted()
+            print(i)
+        self.highlightedframes = []
         self.fillGallery()
+        self.updateVideoPlayer()
+
+    def closeFile(self):
+        self.currentFrames = []
+        self.currentFile = []
+        self.fillGallery()
+        self.updateVideoPlayer()
+
+    def updateVideoPlayer(self):
+        self.videoPlayer.frames = self.currentFrames
+        self.videoPlayer.maxFrames = len(self.currentFrames) - 1
+        self.videoPlayer.framePos = 0
+        self.videoPlayer.nextFrame()
 
     def saveFileDialog(self):
         fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
@@ -257,9 +245,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 raise Exception('FileType')
 
     def saveToNpy(self):
-        list = []
-        for frame in self.currentFrames:
-            list.append(frame.image)
+        list = [f.image for f.image in self.currentFrames]
+        #for frame in self.currentFrames:
+        #    list.append(frame.image)
         np.savez_compressed('testnpy',list)
 
     def setRetinaEnabled(self, event):
@@ -312,14 +300,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                 self.labels[i].setIndex(tempindex)
                 self.labels[i].clicked.connect(self.displayMetaData)
-                #self.labels[i].unhighlighted.connect(self.removeHighlighted)
+                self.labels[i].unhighlighted.connect(self.removeHighlighted)
                 print("Setting framenum")
                 self.numbers[i].display(currentframe.framenum)
             else:
                 self.labels[i].clear()
                 self.labels[i].setIndex(-1)
                 self.numbers[i].display(0)
-        self.displayMetaData()
+        #self.displayMetaData()
 
     def showWarning(self,error):
         messagekey = str(error[1])

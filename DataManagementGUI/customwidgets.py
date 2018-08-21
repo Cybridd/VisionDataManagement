@@ -19,16 +19,22 @@ class ClickLabel(QLabel):
         #self.clicked.emit(self.index)
         self.highlighted = not self.highlighted
         if self.highlighted:
-            self.setFrameShape(QtWidgets.QFrame.Box)
-            self.setLineWidth(3)
+            self.makeHighlighted()
             self.clicked.emit(self.index)
         else:
-            self.setFrameShape(QtWidgets.QFrame.StyledPanel)
-            self.setLineWidth(1)
+            self.notHighlighted()
             self.unhighlighted.emit(self.index)
 
     def setIndex(self, index):
         self.index = index
+
+    def makeHighlighted(self):
+        self.setFrameShape(QtWidgets.QFrame.Box)
+        self.setLineWidth(3)
+
+    def notHighlighted(self):
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.setLineWidth(1)
 
 class VideoPlayer(QWidget):
 

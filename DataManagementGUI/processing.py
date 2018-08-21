@@ -174,8 +174,7 @@ def loadCsv(filename, frames):
         # create new vector objects
         R = startRetina()
         count = 1
-        listtest = list(metadata.groupby('vector').groups.items())
-        print(listtest[0]['label'])
+        #listtest = list(metadata.groupby('vector').groups.items())
         for i in xrange(metadata.shape[0]):
             vector = np.asarray(metadata['vector'][i].split(","),
                 dtype=np.float64)
