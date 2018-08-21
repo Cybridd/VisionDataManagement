@@ -33,6 +33,10 @@ def getBackProjection(R,V,fix):
     backshape = [720,1280,V.shape[-1]] # fixed size for the case of this app
     return R.backproject(V,backshape,fix)
 
+def getBackProjections(frame):
+    R = startRetina()
+    return getBackProjection(R,frame._vector,fix=(frame.fixationy,frame.fixationx))
+
 def createCortex():
     cortex = Cortex()
     lp = join(datadir, "cortices", "50k_Lloc_tight.pkl")
@@ -70,14 +74,6 @@ def createImagesFromFolder(currentDir):
 def loadhdf5(filename, frames):
     currentFrames = frames if frames else []
     hdf5_open = h5py.File(filename, mode="r")
-    R = startRetina()
-    if R._cudaRetina: print("Using CUDA")
-    print(hdf5_open.keys())
-    print(len(hdf5_open))
-    #cpucount = mp.cpu_count() - 1 if mp.cpu_count() < 32 else mp.cpu_count() / 2
-    #pool = mp.Pool(cpu_count)
-    #partial_getBackproject = partial(getBackProjection, R=R,)
-    #hdf5_open.
     count = 1
     if 'vector' in hdf5_open.keys():
         for i in xrange(len(hdf5_open['vector'])):
@@ -92,11 +88,13 @@ def loadhdf5(filename, frames):
             v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
             v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
             count += 1
-            v.image = getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
-            print(v.image.shape)
             currentFrames.append(v)
-#        images = pool.starmap(getBackProjection)
 
+        cpucount = mp.cpu_count() - 1
+        pool = mp.Pool(cpucount)
+        images = pool.map(getBackProjections, currentFrames)
+        for i in xrange(len(currentFrames)):
+            currentFrames[i].image = images[i]
     else:
         raise Exception('HDF5Format')
     return currentFrames
@@ -172,7 +170,6 @@ def loadCsv(filename, frames):
                     setattr(currentframe,column,metadata[column][i])
     else:
         # create new vector objects
-        R = startRetina()
         count = 1
         #listtest = list(metadata.groupby('vector').groups.items())
         for i in xrange(metadata.shape[0]):
@@ -186,8 +183,12 @@ def loadCsv(filename, frames):
             v.framenum = int(metadata['framenum'][i]) if 'framenum' in cols else count
             v._timestamp = metadata['timestamp'][i] if 'timestamp' in cols else None
             count += 1
-            v.image = getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
             currentframes.append(v)
+        cpucount = mp.cpu_count() - 1
+        pool = mp.Pool(cpucount)
+        images = pool.map(getBackProjections, currentframes)
+        for i in xrange(len(currentframes)):
+            currentframes[i].image = images[i]
     return currentframes
 
 def vectorFromCSV(row):
@@ -209,3 +210,6 @@ def saveCSV(exportname, frames):
     df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in frames])
     # exported file should be read with ';' delimiter ONLY
     df.to_csv(exportname,encoding='utf-8',sep=";") # compression='gzip'?
+
+def loadPickle(filename):
+    return utils.loadPickle(filename)

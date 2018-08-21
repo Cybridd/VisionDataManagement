@@ -1,15 +1,8 @@
-import sys, traceback
-import os
+import sys
 import design
-import cv2
-import time
-import numpy as np
-import pandas as pd
-import h5py
 import processing as ip
 from customwidgets import VideoPlayer
-from os.path import join
-from model import Image, ImageVector, Video
+from model import Video
 from worker import Worker
 from retinavision import utils
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -17,25 +10,21 @@ from QtCore import *
 from QtGui import *
 from QtWidgets import *
 
-#TODO metadata editing, deleting files, export for DCNN,
-# Give to Worker - Image/Video object creation, image saving/exporting, display updating
+#TODO TESTING, maybe adding vector generation from raw data
 
 class DMApp(QMainWindow, design.Ui_MainWindow):
 
-    #ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
     fileName = None
     currentDir = None
     currentFile = None
     currentFrames = None
     metaFileName = None
     metadatamodel = None
-    fileType = None
-    posFile = None
     videoPlayer = None
     isRetinaEnabled = False
     highlightedframes = []
     videofiletypes = {'mp4','avi'}
-    metadatatypes = {'csv','json'}
+    metadatatypes = {'csv'}
     rawvectortypes = {'npy','npz'}
 
     def __init__(self,parent=None):
@@ -62,12 +51,13 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.numbers.sort(key=lambda number: number.objectName())
         self.maintabWidget.setCurrentIndex(0)
         self.threadpool = QThreadPool()
+        print(QStyleFactory.keys())
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self,"Open file", "",
-            "All Files (*);;mp4 Files (*.mp4);;avi Files (*.avi);;jpeg Files (*.jpg);;csv Files (*.csv);;json Files(*.json)",
+            "All Files (*);;mp4 Files (*.mp4);;avi Files (*.avi);;jpeg Files (*.jpg);;csv Files (*.csv);;HDF5 Files(*.h5)",
             options=options)
         if fileName:
             self.openFile(fileName)
@@ -86,20 +76,16 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metafilename = filename
             self.startWorker(ip.loadCsv,self.setCurrentFrames,self.fillGallery,
                 self.metafilename,self.currentFrames)
-#        elif filetype in self.rawvectortypes:
-#            self.currentFile = filename
-#            self.startWorker(self.loadNpy,self.setCurrentFrames,self.fillGallery)
-#            self.generateButton.setDisabled(True)
-#            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
-#        elif filetype == 'pkl':
-#            self.currentFile = filename
-#            self.startWorker(self.loadPickle,self.setCurrentFrames,self.fillGallery)
+        elif filetype == 'pkl':
+            self.currentFile = filename
+            self.startWorker(ip.loadPickle,self.setCurrentFrames,self.fillGallery,
+                self.currentFile)
         elif filetype == 'h5':
             self.currentFile = filename
             self.startWorker(ip.loadhdf5,self.setCurrentFrames,self.fillGallery,
                 self.currentFile,self.currentFrames)
         else:
-            raise Exception('FileType')
+            self.showWarning('FileType')
 
     def openFolderDialog(self):
         options = QFileDialog.Options()
@@ -122,22 +108,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         worker.signals.error.connect(self.showWarning)
         self.threadpool.start(worker)
 
-    def loadNpy(self):
-        currentFrames = []
-        with np.load(self.currentFile) as data:
-            for d in data:
-                print(d.value)
-                #frame = im.Image(image=d)
-                #currentFrames.append(frame)
-        return currentFrames
-
     def loadPickle(self):
         return utils.loadPickle(self.currentFile)
 
     def displayMetaData(self,framenum=0):
-        #print("displayMetaData called")
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
-            #print("We doin it")
             self.metadatamodel = QtGui.QStandardItemModel(self)
             currentframe = self.currentFrames[framenum]
 
@@ -188,38 +163,41 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.currentFrames = frames
         self.startVideoPlayer()
 
-    def getCurrenútFrameNum(self):
+    def getCurrentFrameNum(self):
         for i in xrange(self.metadatamodel.rowCount()):
             if self.metadatamodel.item(i,0).text() == 'framenum':
                 targetframe = int(self.metadatamodel.item(i,1).text())
         return targetframe
 
     def selectAll(self):
-        for label in self.labels:
-            if label.pixmap:
-                label.makeHighlighted()
-        self.maintabWidget.setCurrentIndex(2)
-        self.highlightedframes = range(len(self.currentFrames))
+        if self.currentFrames:
+            for label in self.labels:
+                if label.pixmap:
+                    label.makeHighlighted()
+            self.maintabWidget.setCurrentIndex(2)
+            self.highlightedframes = range(len(self.currentFrames))
 
     def deleteFrame(self):
-        if self.maintabWidget.currentIndex() == 2:
-            print("Target frames: " + ''.join(str(e) for e in self.highlightedframes))
-            targetframes = [self.currentFrames[i] for i in self.highlightedframes]
-        else:
-            targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
-        self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
-        for i in self.highlightedframes:
-            self.labels[i/16 + i].notHighlighted()
-            print(i)
-        self.highlightedframes = []
-        self.fillGallery()
-        self.updateVideoPlayer()
+        if self.currentFrames:
+            if self.maintabWidget.currentIndex() == 2:
+                print("Target frames: " + ''.join(str(e) for e in self.highlightedframes))
+                targetframes = [self.currentFrames[i] for i in self.highlightedframes]
+            else:
+                targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
+            self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
+            for i in self.highlightedframes:
+                self.labels[i/16 + i].notHighlighted()
+                print(i)
+            self.highlightedframes = []
+            self.fillGallery()
+            self.updateVideoPlayer()
 
     def closeFile(self):
-        self.currentFrames = []
-        self.currentFile = []
-        self.fillGallery()
-        self.updateVideoPlayer()
+        if self.currentFile: self.currentFile = []
+        if self.currentFrames:
+            self.currentFrames = []
+            self.fillGallery()
+            self.updateVideoPlayer()
 
     def updateVideoPlayer(self):
         self.videoPlayer.frames = self.currentFrames
@@ -230,7 +208,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def saveFileDialog(self):
         fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
         filetype = fileName.split(".")[-1]
-        if fileName:
+        if fileName and self.currentFrames:
             self.exportfilename = fileName
             if filetype == 'pkl':
                 utils.writePickle(fileName, self.currentFrames)
@@ -242,19 +220,21 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.startWorker(ip.saveCSV,None,None,self.exportfilename,self.currentFrames)
                 self.generateButton.setText("Saving to CSV...")
             else:
-                raise Exception('FileType')
-
-    def saveToNpy(self):
-        list = [f.image for f.image in self.currentFrames]
-        #for frame in self.currentFrames:
-        #    list.append(frame.image)
-        np.savez_compressed('testnpy',list)
+                self.showWarning('FileType')
 
     def setRetinaEnabled(self, event):
         if event:
             self.isRetinaEnabled = True
+            self.browseButton.setDisabled(True)
+            self.browseFolderButton.setDisabled(True)
+            self.actionFile.setDisabled(True)
+            self.actionFolder.setDisabled(True)
         else:
             self.isRetinaEnabled = False
+            self.browseButton.setDisabled(False)
+            self.browseFolderButton.setDisabled(False)
+            self.actionFile.setDisabled(False)
+            self.actionFolder.setDisabled(False)
 
     def startVideoPlayer(self, webcammode=False):
         self.videoPlayer = VideoPlayer(self.currentFile,self.isRetinaEnabled,self,webcammode)
@@ -289,28 +269,25 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.maintabWidget.setCurrentIndex(2)
         self.generateButton.setText("Done!")
         self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
-        print("Filling gallery")
         for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
-                print("Filling gallery slot")
                 tempindex = i + (16 * self.verticalSlider_3.value())
                 currentframe = self.currentFrames[tempindex]
-                print("Setting pixmap")
-                print(currentframe.image.shape)
                 self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                 self.labels[i].setIndex(tempindex)
                 self.labels[i].clicked.connect(self.displayMetaData)
                 self.labels[i].unhighlighted.connect(self.removeHighlighted)
-                print("Setting framenum")
                 self.numbers[i].display(currentframe.framenum)
             else:
                 self.labels[i].clear()
                 self.labels[i].setIndex(-1)
                 self.numbers[i].display(0)
-        #self.displayMetaData()
 
     def showWarning(self,error):
-        messagekey = str(error[1])
+        if isinstance(error, tuple):
+            messagekey = str(error[1])
+        else:
+            messagekey = error
         messages = {
         'exceptions.IndexError' : 'There is an inequal number of images and metadata records',
         '1L' : 'There was a problem with the format of the metadata',
@@ -336,6 +313,7 @@ def main():
     #qtmodern.styles.dark(app)
     #mw = qtmodern.windows.ModernWindow(form)
     #mw.show()
+    app.setStyle('Fusion')
     form.show()
     app.exec_()
 

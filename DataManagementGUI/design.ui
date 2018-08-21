@@ -19,18 +19,21 @@
   <property name="windowTitle">
    <string>Vision Data Management</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QFrame" name="buttonframe">
     <property name="geometry">
      <rect>
       <x>1630</x>
-      <y>10</y>
+      <y>0</y>
       <width>271</width>
-      <height>1011</height>
+      <height>1021</height>
      </rect>
     </property>
     <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
+     <enum>QFrame::NoFrame</enum>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
@@ -40,7 +43,7 @@
       <rect>
        <x>20</x>
        <y>10</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -53,7 +56,7 @@
       <rect>
        <x>20</x>
        <y>50</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -78,7 +81,7 @@
       <rect>
        <x>150</x>
        <y>50</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -122,7 +125,7 @@
       <rect>
        <x>150</x>
        <y>10</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -135,7 +138,7 @@
       <rect>
        <x>20</x>
        <y>470</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -148,7 +151,7 @@
       <rect>
        <x>150</x>
        <y>470</y>
-       <width>81</width>
+       <width>89</width>
        <height>31</height>
       </rect>
      </property>
@@ -227,7 +230,7 @@
      <enum>QTabWidget::North</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="mainpage">
      <attribute name="title">
@@ -318,7 +321,7 @@
          <x>0</x>
          <y>850</y>
          <width>1611</width>
-         <height>161</height>
+         <height>151</height>
         </rect>
        </property>
        <property name="frameShape">
@@ -364,8 +367,8 @@
          <rect>
           <x>830</x>
           <y>40</y>
-          <width>75</width>
-          <height>23</height>
+          <width>89</width>
+          <height>29</height>
          </rect>
         </property>
         <property name="text">
@@ -380,8 +383,8 @@
          <rect>
           <x>730</x>
           <y>40</y>
-          <width>75</width>
-          <height>23</height>
+          <width>89</width>
+          <height>29</height>
          </rect>
         </property>
         <property name="text">
@@ -394,10 +397,10 @@
        <widget class="QToolButton" name="skipBackButton">
         <property name="geometry">
          <rect>
-          <x>680</x>
+          <x>630</x>
           <y>40</y>
-          <width>31</width>
-          <height>21</height>
+          <width>89</width>
+          <height>25</height>
          </rect>
         </property>
         <property name="text">
@@ -410,10 +413,10 @@
        <widget class="QToolButton" name="skipForwardButton">
         <property name="geometry">
          <rect>
-          <x>920</x>
+          <x>930</x>
           <y>40</y>
-          <width>31</width>
-          <height>21</height>
+          <width>89</width>
+          <height>25</height>
          </rect>
         </property>
         <property name="text">
@@ -498,8 +501,8 @@
         <rect>
          <x>830</x>
          <y>40</y>
-         <width>75</width>
-         <height>23</height>
+         <width>89</width>
+         <height>29</height>
         </rect>
        </property>
        <property name="text">
@@ -514,8 +517,8 @@
         <rect>
          <x>730</x>
          <y>40</y>
-         <width>75</width>
-         <height>23</height>
+         <width>89</width>
+         <height>29</height>
         </rect>
        </property>
        <property name="text">
@@ -528,10 +531,10 @@
       <widget class="QToolButton" name="skipBackButton_2">
        <property name="geometry">
         <rect>
-         <x>680</x>
+         <x>630</x>
          <y>40</y>
-         <width>31</width>
-         <height>21</height>
+         <width>89</width>
+         <height>25</height>
         </rect>
        </property>
        <property name="text">
@@ -544,10 +547,10 @@
       <widget class="QToolButton" name="skipForwardButton_2">
        <property name="geometry">
         <rect>
-         <x>920</x>
+         <x>930</x>
          <y>40</y>
-         <width>31</width>
-         <height>21</height>
+         <width>89</width>
+         <height>25</height>
         </rect>
        </property>
        <property name="text">
@@ -906,6 +909,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numb">
         <property name="geometry">
@@ -915,6 +921,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numc">
@@ -926,6 +935,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numd">
         <property name="geometry">
@@ -935,6 +947,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numh">
@@ -946,6 +961,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="nume">
         <property name="geometry">
@@ -955,6 +973,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numf">
@@ -966,6 +987,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numg">
         <property name="geometry">
@@ -975,6 +999,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numj">
@@ -986,6 +1013,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numi">
         <property name="geometry">
@@ -995,6 +1025,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numk">
@@ -1006,6 +1039,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numl">
         <property name="geometry">
@@ -1015,6 +1051,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="numo">
@@ -1026,6 +1065,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numn">
         <property name="geometry">
@@ -1035,6 +1077,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
        <widget class="QLCDNumber" name="nump">
@@ -1046,6 +1091,9 @@
           <height>23</height>
          </rect>
         </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QLCDNumber" name="numm">
         <property name="geometry">
@@ -1055,6 +1103,9 @@
           <width>61</width>
           <height>23</height>
          </rect>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
       </widget>
