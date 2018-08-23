@@ -51,7 +51,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.numbers.sort(key=lambda number: number.objectName())
         self.maintabWidget.setCurrentIndex(0)
         self.threadpool = QThreadPool()
-        print(QStyleFactory.keys())
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
@@ -99,7 +98,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.infoLabel.setText("Folder opened: "+ self.currentDir)
             self.generateButton.setText("Loading...")
             self.generateButton.setDisabled(True)
-            self.verticalSlider_3.valueChanged.connect(self.fillGallery)
 
     def startWorker(self,func,resultfunc=None,finishedfunc=None,*args):
         worker = Worker(func,*args)
@@ -161,6 +159,10 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 
     def setCurrentFrames(self,frames):
         self.currentFrames = frames
+        self.verticalSlider_3.valueChanged.connect(self.fillGallery)
+        self.generateButton.setText("Done!")
+        numframes = len(self.currentFrames)
+        self.verticalSlider_3.setRange(0,numframes/16)
         self.startVideoPlayer()
 
     def getCurrentFrameNum(self):
@@ -186,14 +188,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
             self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
             for i in self.highlightedframes:
-                self.labels[i/16 + i].notHighlighted()
                 print(i)
+                self.labels[i - (16 * self.verticalSlider_3.value())].notHighlighted()
             self.highlightedframes = []
             self.fillGallery()
             self.updateVideoPlayer()
 
     def closeFile(self):
-        if self.currentFile: self.currentFile = []
+        if self.currentFile: self.currentFile = None
         if self.currentFrames:
             self.currentFrames = []
             self.fillGallery()
@@ -261,27 +263,27 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.browseFolderButton.setDisabled(True)
             self.scrubSlider.setDisabled(True)
         else:
-            self.videoPlayer = None
+            self.startVideoPlayer()
             self.browseButton.setDisabled(False)
             self.browseFolderButton.setDisabled(False)
 
     def fillGallery(self):
         self.maintabWidget.setCurrentIndex(2)
-        self.generateButton.setText("Done!")
-        self.verticalSlider_3.setRange(0,len(self.currentFrames)/16)
         for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
                 tempindex = i + (16 * self.verticalSlider_3.value())
-                currentframe = self.currentFrames[tempindex]
-                self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
-                self.labels[i].setIndex(tempindex)
-                self.labels[i].clicked.connect(self.displayMetaData)
-                self.labels[i].unhighlighted.connect(self.removeHighlighted)
-                self.numbers[i].display(currentframe.framenum)
-            else:
-                self.labels[i].clear()
-                self.labels[i].setIndex(-1)
-                self.numbers[i].display(0)
+                if tempindex < len(self.currentFrames):
+                    currentframe = self.currentFrames[tempindex]
+                    #print("Adding image " +  str(tempindex))
+                    self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
+                    self.labels[i].setIndex(tempindex)
+                    self.labels[i].clicked.connect(self.displayMetaData)
+                    self.labels[i].unhighlighted.connect(self.removeHighlighted)
+                    self.numbers[i].display(currentframe.framenum)
+                else:
+                    self.labels[i].clear()
+                    self.labels[i].setIndex(-1)
+                    self.numbers[i].display(0)
 
     def showWarning(self,error):
         if isinstance(error, tuple):

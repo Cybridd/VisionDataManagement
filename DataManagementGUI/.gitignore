@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 
 # Do not include temporary test files
-test.py
+createtestfiles.py
 model/test.py
+testdata/*

@@ -154,6 +154,7 @@ def loadCsv(filename, frames):
     currentframes = frames if frames else []
     print(metadata.shape)
     cols = metadata.columns
+    print(cols)
     if 'vector' not in cols and not currentframes:
         raise Exception('NoFrames')
     elif 'vector' not in cols:
@@ -171,7 +172,6 @@ def loadCsv(filename, frames):
     else:
         # create new vector objects
         count = 1
-        #listtest = list(metadata.groupby('vector').groups.items())
         for i in xrange(metadata.shape[0]):
             vector = np.asarray(metadata['vector'][i].split(","),
                 dtype=np.float64)
@@ -206,10 +206,16 @@ def vectorFromCSV(row):
 
 
 def saveCSV(exportname, frames):
-    columns = ['_vector'] + dir(frames[0])
+    columns = dir(frames[0])
     df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in frames])
-    # exported file should be read with ';' delimiter ONLY
-    df.to_csv(exportname,encoding='utf-8',sep=";") # compression='gzip'?
+    vectorstrings = []
+    for frame in frames:
+        vs = ','.join(str(e) for e in frame._vector)
+        vectorstrings.append(vs)
+    df['vector'] = pd.Series(vectorstrings, index=df.index)
+    df.rename(columns = {'_timestamp':'timestamp'}, inplace = True)
+    # exported file should be read with ' ' delimiter ONLY
+    df.to_csv(exportname,encoding='utf-8',sep=" ") # compression='gzip'?
 
 def loadPickle(filename):
     return utils.loadPickle(filename)
