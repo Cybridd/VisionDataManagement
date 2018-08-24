@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import cv2
 import h5py
+import re
+import time
 import multiprocessing as mp
 from PyQt5 import QtGui, QtCore
 from QtGui import QImage, QPixmap
@@ -29,13 +31,14 @@ def startRetina():
     retina.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
     return retina
 
-def getBackProjection(R,V,fix):
-    backshape = [720,1280,V.shape[-1]] # fixed size for the case of this app
-    return R.backproject(V,backshape,fix)
+def getBackProjection(R,V,shape,fix):
+    return R.backproject(V,shape,fix)
 
 def getBackProjections(frame):
     R = startRetina()
-    return getBackProjection(R,frame._vector,fix=(frame.fixationy,frame.fixationx))
+    backshape = [720,1280,frame._vector.shape[-1]]
+    R.prepare(backshape,fix=(frame.fixationy,frame.fixationx))
+    return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
 
 def createCortex():
     cortex = Cortex()
@@ -72,8 +75,11 @@ def createImagesFromFolder(currentDir):
     return currentFrames
 
 def loadhdf5(filename, frames):
-    currentFrames = frames if frames else []
+    currentframes = frames if frames else []
     hdf5_open = h5py.File(filename, mode="r")
+    R = startRetina()
+    if R._cudaRetina:
+        print("Using CUDA")
     count = 1
     if 'vector' in hdf5_open.keys():
         for i in xrange(len(hdf5_open['vector'])):
@@ -88,33 +94,25 @@ def loadhdf5(filename, frames):
             v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
             v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
             count += 1
-            currentFrames.append(v)
-
-        cpucount = mp.cpu_count() - 1
-        pool = mp.Pool(cpucount)
-        images = pool.map(getBackProjections, currentFrames)
-        for i in xrange(len(currentFrames)):
-            currentFrames[i].image = images[i]
+            currentframes.append(v)
+        #cpucount = mp.cpu_count() - 1
+        #pool = mp.Pool(cpucount)
+        #images = pool.map(getBackProjections, currentframes)
+        #for i in xrange(len(currentframes)):
+        #    currentframes[i].image = images[i]
+        print("Vector shape: " + str(currentframes[0]._vector.shape))
+        backshape = [720,1280,currentframes[0]._vector.shape[-1]]
+        print("Backprojection shape: " + str(backshape))
+        R.prepare(backshape,fix=(currentframes[0].fixationy,currentframes[0].fixationx))
+        for frame in currentframes:
+            start = time.time()
+            print R._normFixation == (frame.fixationy,frame.fixationx), backshape[:2] == R._gaussNorm.shape[:2]
+            frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+            end = time.time()
+            print("Took "+ str(end-start) + " seconds.")
     else:
         raise Exception('HDF5Format')
-    return currentFrames
-
-def loadHDF5Data(data):
-    frames = []
-    count = 1
-    v = ImageVector(vector=hdf5_open['vector'][i],
-        label=hdf5_open['label'][i],
-        fixationy=int(hdf5_open['fixationy'][i]),
-        fixationx=int(hdf5_open['fixationx'][i]),
-        retinatype=hdf5_open['retinatype'][i])
-    v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
-    v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
-    count += 1
-    v.image = getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
-    frames.append(v)
-    return frames
-
-
+    return currentframes
 
 def saveHDF5(exportname, frames):
     vectors, labels, framenums, timestamps, fixationY, fixationX, retinatypes = ([] for i in range(7))
@@ -150,11 +148,12 @@ def saveHDF5(exportname, frames):
     hdf5_file.close()
 
 def loadCsv(filename, frames):
-    metadata = pd.read_csv(filename,delimiter=" ",encoding="utf-8")
+    metadata = pd.read_csv(filename,delimiter=";",encoding="utf-8")#,index_col="framenum"
     currentframes = frames if frames else []
     print(metadata.shape)
     cols = metadata.columns
     print(cols)
+    print(metadata.index.name)
     if 'vector' not in cols and not currentframes:
         raise Exception('NoFrames')
     elif 'vector' not in cols:
@@ -173,8 +172,21 @@ def loadCsv(filename, frames):
         # create new vector objects
         count = 1
         for i in xrange(metadata.shape[0]):
-            vector = np.asarray(metadata['vector'][i].split(","),
-                dtype=np.float64)
+            print(metadata.shape[0])
+            if metadata['vector'][i].startswith('['):
+                print("We're here")
+                vtemp = re.findall("\[(.*?)\]", metadata['vector'][i])
+                print(vtemp[0])
+                for j in xrange(len(vtemp)):
+                    vtemp[j] = [x for x in vtemp[j].split(' ') if x]
+                print(vtemp[0])
+                vtemp = np.asarray([x for x in vtemp], dtype=np.float64)
+                vector = np.asarray(vtemp,dtype=np.float64)
+            else:
+                vector = np.asarray(metadata['vector'][i].split(","),
+                    dtype=np.float64)
+            print("Fixation Y: " + str(metadata['fixationy'][i]))
+            print("Fixation X: " + str(metadata['fixationx'][i]))
             v = ImageVector(vector=vector,
                 label=metadata['label'][i],
                 fixationy=int(metadata['fixationy'][i]),
@@ -184,26 +196,24 @@ def loadCsv(filename, frames):
             v._timestamp = metadata['timestamp'][i] if 'timestamp' in cols else None
             count += 1
             currentframes.append(v)
-        cpucount = mp.cpu_count() - 1
-        pool = mp.Pool(cpucount)
-        images = pool.map(getBackProjections, currentframes)
-        for i in xrange(len(currentframes)):
-            currentframes[i].image = images[i]
+        print("Vector shape: " + str(currentframes[0]._vector.shape))
+        backshape = [720,1280,currentframes[0]._vector.shape[-1]]
+        print("Backprojection shape: " + str(backshape))
+        R = startRetina()
+        R.prepare(backshape,fix=(currentframes[0].fixationy,currentframes[0].fixationx))
+        for frame in currentframes:
+            start = time.time()
+            print R._normFixation == (frame.fixationy,frame.fixationx), backshape[:2] == R._gaussNorm.shape[:2]
+            fixation=(frame.fixationy,frame.fixationx)
+            frame.image = R.backproject(frame._vector,backshape,fix=fixation)
+            end = time.time()
+            print("Took "+ str(end-start) + " seconds.")
+        #cpucount = mp.cpu_count() - 1
+        #pool = mp.Pool(cpucount)
+        #images = pool.map(getBackProjections, currentframes)
+        #for i in xrange(len(currentframes)):
+        #    currentframes[i].image = images[i]
     return currentframes
-
-def vectorFromCSV(row):
-    vector = np.asarray(metadata['vector'][i].split(","),
-        dtype=np.float64)
-    v = ImageVector(vector=vector,
-        label=metadata['label'][i],
-        fixationy=int(metadata['fixationy'][i]),
-        fixationx=int(metadata['fixationx'][i]),
-        retinatype=metadata['retinatype'][i])
-    v.framenum = int(metadata['framenum'][i]) if 'framenum' in cols else count
-    v._timestamp = metadata['timestamp'][i] if 'timestamp' in cols else None
-    count += 1
-    v.image = getBackProjection(R,v._vector,fix=(v.fixationy,v.fixationx))
-
 
 def saveCSV(exportname, frames):
     columns = dir(frames[0])
@@ -214,8 +224,8 @@ def saveCSV(exportname, frames):
         vectorstrings.append(vs)
     df['vector'] = pd.Series(vectorstrings, index=df.index)
     df.rename(columns = {'_timestamp':'timestamp'}, inplace = True)
-    # exported file should be read with ' ' delimiter ONLY
-    df.to_csv(exportname,encoding='utf-8',sep=" ") # compression='gzip'?
+    # exported file should be read with ';' delimiter ONLY
+    df.to_csv(exportname,encoding='utf-8',sep=";") # compression='gzip'?
 
 def loadPickle(filename):
     return utils.loadPickle(filename)

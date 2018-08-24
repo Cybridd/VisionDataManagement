@@ -1,7 +1,7 @@
 import sys
 import design
 import processing as ip
-from customwidgets import VideoPlayer
+from customwidgets import VideoPlayer, ClickLabel
 from model import Video
 from worker import Worker
 from retinavision import utils
@@ -45,8 +45,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.actionSelect_All.triggered.connect(self.selectAll)
         self.actionDelete_Selection.triggered.connect(self.deleteFrame)
         self.actionExit.triggered.connect(self.closeApp)
-        self.labels = self.dataframe_2.findChildren(QtWidgets.QLabel)
+        self.labels = self.dataframe_2.findChildren(ClickLabel)
         self.labels.sort(key=lambda label: label.objectName())
+        for i in xrange(len(self.labels)):
+            self.labels[i].clicked.connect(self.displayMetaData)
+            self.labels[i].unhighlighted.connect(self.removeHighlighted)
         self.numbers = self.dataframe_2.findChildren(QtWidgets.QLCDNumber)
         self.numbers.sort(key=lambda number: number.objectName())
         self.maintabWidget.setCurrentIndex(0)
@@ -132,12 +135,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.highlightedframes.append(int(framenum))
 
     def removeHighlighted(self,framenum):
-        print("highlighted frames" + ''.join(str(e) for e in self.highlightedframes))
-        print("remove called")
+        print("highlighted frames: " + ' '.join(str(e) for e in self.highlightedframes))
         if framenum in self.highlightedframes:
             print("removing " + str(framenum))
             self.highlightedframes.remove(framenum)
-
+        print("remaining frames: " + ' '.join(str(e) for e in self.highlightedframes))
     def saveMetaData(self,framenum):
         if self.maintabWidget.currentIndex() == 2:
             targetframes = [self.currentFrames[i] for i in self.highlightedframes]
@@ -182,14 +184,13 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def deleteFrame(self):
         if self.currentFrames:
             if self.maintabWidget.currentIndex() == 2:
-                print("Target frames: " + ''.join(str(e) for e in self.highlightedframes))
+                print("Deleting frames: " + ' '.join(str(e) for e in self.highlightedframes))
                 targetframes = [self.currentFrames[i] for i in self.highlightedframes]
             else:
                 targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
             self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
-            for i in self.highlightedframes:
-                print(i)
-                self.labels[i - (16 * self.verticalSlider_3.value())].notHighlighted()
+            for label in self.labels:
+                label.notHighlighted()
             self.highlightedframes = []
             self.fillGallery()
             self.updateVideoPlayer()
@@ -204,8 +205,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
     def updateVideoPlayer(self):
         self.videoPlayer.frames = self.currentFrames
         self.videoPlayer.maxFrames = len(self.currentFrames) - 1
-        self.videoPlayer.framePos = 0
-        self.videoPlayer.nextFrame()
+        #self.videoPlayer.framePos = 0
+        #self.videoPlayer.nextFrame()
+        self.videoPlayer.setCurrent()
 
     def saveFileDialog(self):
         fileName, _ = QFileDialog.getSaveFileName(self,"Save file","","csv (*.csv);;HDF5 (*.h5);;pickle (*.pkl)")#, options=options
@@ -263,12 +265,14 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.browseFolderButton.setDisabled(True)
             self.scrubSlider.setDisabled(True)
         else:
-            self.startVideoPlayer()
+            if self.currentFrames:
+                self.startVideoPlayer()
             self.browseButton.setDisabled(False)
             self.browseFolderButton.setDisabled(False)
 
     def fillGallery(self):
-        self.maintabWidget.setCurrentIndex(2)
+        if self.maintabWidget.currentIndex() == 0:
+            self.maintabWidget.setCurrentIndex(2)
         for i in xrange(len(self.labels)):
             if i < len(self.currentFrames):
                 tempindex = i + (16 * self.verticalSlider_3.value())
@@ -277,13 +281,15 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                     #print("Adding image " +  str(tempindex))
                     self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                     self.labels[i].setIndex(tempindex)
-                    self.labels[i].clicked.connect(self.displayMetaData)
-                    self.labels[i].unhighlighted.connect(self.removeHighlighted)
                     self.numbers[i].display(currentframe.framenum)
                 else:
                     self.labels[i].clear()
                     self.labels[i].setIndex(-1)
                     self.numbers[i].display(0)
+            else:
+                self.labels[i].clear()
+                self.labels[i].setIndex(-1)
+                self.numbers[i].display(0)
 
     def showWarning(self,error):
         if isinstance(error, tuple):

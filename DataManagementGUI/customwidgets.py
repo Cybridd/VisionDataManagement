@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from QtWidgets import *
 from QtCore import pyqtSignal, QTimer
 from model import Video
+import time
 import processing as ip
 import cv2
 
@@ -139,9 +140,12 @@ class VideoPlayer(QWidget):
         self.parent.displayMetaData(self.framePos)
         self.videoFrame.setPixmap(ip.convertToPixmap(frame, 480, 360))
         if self.retina:
+            start = time.time()
             v = self.retina.sample(frame,self.fixation)
             print(frame.shape)
             tight = self.retina.backproject_last()
+            end = time.time()
+            print("Frame took " + str(end - start) + " seconds.")
             cortical = self.cortex.cort_img(v)
             self.focalFrame.setPixmap(ip.convertToPixmap(tight, 480, 360))
             self.corticalFrame.setPixmap(ip.convertToPixmap(cortical, 480, 360))
