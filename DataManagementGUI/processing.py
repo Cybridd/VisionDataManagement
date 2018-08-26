@@ -31,14 +31,14 @@ def startRetina():
     retina.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
     return retina
 
-#def getBackProjection(R,V,shape,fix):
-#    return R.backproject(V,shape,fix)
-#
-#def getBackProjections(frames):
-#    R = startRetina()
-#    backshape = (720,1280,frame._vector.shape[-1])
-#    R.prepare(backshape,fix=(frame.fixationy,frame.fixationx))
-#    return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+def getBackProjection(R,V,shape,fix):
+    return R.backproject(V,shape,fix)
+
+def getBackProjections(frame):
+    R = startRetina()
+    backshape = (720,1280,frame._vector.shape[-1])
+    #R.prepare(backshape,fix=(frame.fixationy,frame.fixationx))
+    return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
 
 def createCortex():
     cortex = Cortex()
@@ -74,7 +74,7 @@ def createImagesFromFolder(currentDir):
                 count += 1
     return currentFrames
 
-def loadhdf5(filename, frames):
+def loadhdf5(filename, frames, concurrbackproject=False):
     currentframes = frames if frames else []
     hdf5_open = h5py.File(filename, mode="r")
     R = startRetina()
@@ -96,18 +96,21 @@ def loadhdf5(filename, frames):
             count += 1
             currentframes.append(v)
         print("Vector shape: " + str(currentframes[0]._vector.shape))
-        backshape = (720,1280,currentframes[0]._vector.shape[-1])
-        print("Backprojection shape: " + str(backshape))
-        for frame in currentframes:
-            start = time.time()
-            frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
-            end = time.time()
-            print("Backprojection took "+ str(end-start) + " seconds.")
-        #cpucount = mp.cpu_count() - 1
-        #pool = mp.Pool(cpucount)
-        #images = pool.map(getBackProjections, currentframes)
-        #for i in xrange(len(currentframes)):
-        #    currentframes[i].image = images[i]
+        if concurrbackproject:
+            print("Beginning backprojection using multiprocessing...")
+            cpucount = mp.cpu_count() - 1
+            pool = mp.Pool(cpucount)
+            images = pool.map(getBackProjections, currentframes)
+            for i in xrange(len(currentframes)):
+                currentframes[i].image = images[i]
+        else:
+            backshape = (720,1280,currentframes[0]._vector.shape[-1])
+            print("Backprojection shape: " + str(backshape))
+            for frame in currentframes:
+                start = time.time()
+                frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+                end = time.time()
+                print("Backprojection took "+ str(end-start) + " seconds.")
     else:
         raise Exception('HDF5Format')
     return currentframes

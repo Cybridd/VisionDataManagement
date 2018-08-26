@@ -76,7 +76,6 @@ class VideoPlayer(QWidget):
             self.timer.start(1000.0/30)
         else:
             self.maxFrames = len(self.frames) - 1
-        print(self.maxFrames)
         self.parent.scrubSlider.setRange(0,self.maxFrames)
         self.parent.scrubSlider_2.setRange(0,self.maxFrames)
         self.framePos = 0

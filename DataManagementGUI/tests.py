@@ -97,5 +97,14 @@ class AppTests(TestCase):
     def tearDown(self):
         pass
 
+class PerformanceTests(TestCase):
+
+    def test_hdf5_loading_performance(self):
+        pass
+        # 1000 50k vectors serial - 141.82s
+        # 1000 50k vectors concurrent - 2108.56s
+
+
+
 if __name__ == '__main__':
     unittest.main(exit=False)
