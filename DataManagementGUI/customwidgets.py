@@ -71,12 +71,14 @@ class VideoPlayer(QWidget):
             codec = cv2.VideoWriter_fourcc(*self.filetypes[self.file.type])
             self.cap.set(cv2.CAP_PROP_FOURCC, codec)
             self.maxFrames = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            self.parent.scrubSlider.setRange(0,self.maxFrames)
         elif self.webcam:
             self.cap = cv2.VideoCapture(0)
             self.timer.start(1000.0/30)
         else:
             self.maxFrames = len(self.frames) - 1
+        print(self.maxFrames)
+        self.parent.scrubSlider.setRange(0,self.maxFrames)
+        self.parent.scrubSlider_2.setRange(0,self.maxFrames)
         self.framePos = 0
         self.videoFrame = parent.label
         self.focalFrame = parent.focallabel
@@ -132,12 +134,12 @@ class VideoPlayer(QWidget):
         self.setCurrent()
 
     def updateDisplay(self, frame):
-        print("update display called")
         self.parent.scrubSlider.setValue(self.framePos)
         self.parent.scrubSlider_2.setValue(self.framePos)
         self.parent.frameNum.display(self.framePos)
         self.parent.frameNum_2.display(self.framePos)
-        self.parent.displayMetaData(self.framePos)
+        if self.parent.maintabWidget.currentIndex() == 1:
+            self.parent.displayMetaData(self.framePos)
         self.videoFrame.setPixmap(ip.convertToPixmap(frame, 480, 360))
         if self.retina:
             start = time.time()

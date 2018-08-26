@@ -361,6 +361,12 @@
         <property name="smallDecimalPoint">
          <bool>false</bool>
         </property>
+        <property name="digitCount">
+         <number>4</number>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
        </widget>
        <widget class="QPushButton" name="pauseButton">
         <property name="geometry">
@@ -494,6 +500,12 @@
        </property>
        <property name="smallDecimalPoint">
         <bool>false</bool>
+       </property>
+       <property name="digitCount">
+        <number>4</number>
+       </property>
+       <property name="segmentStyle">
+        <enum>QLCDNumber::Flat</enum>
        </property>
       </widget>
       <widget class="QPushButton" name="pauseButton_2">

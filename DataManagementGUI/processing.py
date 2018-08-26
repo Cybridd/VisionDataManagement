@@ -31,14 +31,14 @@ def startRetina():
     retina.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
     return retina
 
-def getBackProjection(R,V,shape,fix):
-    return R.backproject(V,shape,fix)
-
-def getBackProjections(frame):
-    R = startRetina()
-    backshape = [720,1280,frame._vector.shape[-1]]
-    R.prepare(backshape,fix=(frame.fixationy,frame.fixationx))
-    return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+#def getBackProjection(R,V,shape,fix):
+#    return R.backproject(V,shape,fix)
+#
+#def getBackProjections(frames):
+#    R = startRetina()
+#    backshape = (720,1280,frame._vector.shape[-1])
+#    R.prepare(backshape,fix=(frame.fixationy,frame.fixationx))
+#    return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
 
 def createCortex():
     cortex = Cortex()
@@ -85,31 +85,29 @@ def loadhdf5(filename, frames):
         for i in xrange(len(hdf5_open['vector'])):
             if 'retinatype' in hdf5_open.keys():
                 v = ImageVector(vector=hdf5_open['vector'][i],
-                    label=hdf5_open['label'][i],
+                    label=hdf5_open['label'][i].tostring(),
                     fixationy=int(hdf5_open['fixationy'][i]),
                     fixationx=int(hdf5_open['fixationx'][i]),
-                    retinatype=hdf5_open['retinatype'][i])
+                    retinatype=hdf5_open['retinatype'][i].tostring())
             else:
                 v = ImageVector(vector=hdf5_open['vector'][i])
             v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
-            v._timestamp = hdf5_open['timestamp'][i] if 'timestamp' in hdf5_open.keys() else None
+            v._timestamp = hdf5_open['timestamp'][i].tostring() if 'timestamp' in hdf5_open.keys() else None
             count += 1
             currentframes.append(v)
+        print("Vector shape: " + str(currentframes[0]._vector.shape))
+        backshape = (720,1280,currentframes[0]._vector.shape[-1])
+        print("Backprojection shape: " + str(backshape))
+        for frame in currentframes:
+            start = time.time()
+            frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+            end = time.time()
+            print("Backprojection took "+ str(end-start) + " seconds.")
         #cpucount = mp.cpu_count() - 1
         #pool = mp.Pool(cpucount)
         #images = pool.map(getBackProjections, currentframes)
         #for i in xrange(len(currentframes)):
         #    currentframes[i].image = images[i]
-        print("Vector shape: " + str(currentframes[0]._vector.shape))
-        backshape = [720,1280,currentframes[0]._vector.shape[-1]]
-        print("Backprojection shape: " + str(backshape))
-        R.prepare(backshape,fix=(currentframes[0].fixationy,currentframes[0].fixationx))
-        for frame in currentframes:
-            start = time.time()
-            print R._normFixation == (frame.fixationy,frame.fixationx), backshape[:2] == R._gaussNorm.shape[:2]
-            frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
-            end = time.time()
-            print("Took "+ str(end-start) + " seconds.")
     else:
         raise Exception('HDF5Format')
     return currentframes
@@ -197,17 +195,15 @@ def loadCsv(filename, frames):
             count += 1
             currentframes.append(v)
         print("Vector shape: " + str(currentframes[0]._vector.shape))
-        backshape = [720,1280,currentframes[0]._vector.shape[-1]]
+        backshape = (720,1280,currentframes[0]._vector.shape[-1])
         print("Backprojection shape: " + str(backshape))
         R = startRetina()
-        R.prepare(backshape,fix=(currentframes[0].fixationy,currentframes[0].fixationx))
         for frame in currentframes:
             start = time.time()
-            print R._normFixation == (frame.fixationy,frame.fixationx), backshape[:2] == R._gaussNorm.shape[:2]
             fixation=(frame.fixationy,frame.fixationx)
             frame.image = R.backproject(frame._vector,backshape,fix=fixation)
             end = time.time()
-            print("Took "+ str(end-start) + " seconds.")
+            print("Backprojection took "+ str(end-start) + " seconds.")
         #cpucount = mp.cpu_count() - 1
         #pool = mp.Pool(cpucount)
         #images = pool.map(getBackProjections, currentframes)

@@ -113,6 +113,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         return utils.loadPickle(self.currentFile)
 
     def displayMetaData(self,framenum=0):
+        print("display metadata called")
         if self.currentFrames and framenum >= 0 and framenum < len(self.currentFrames):
             self.metadatamodel = QtGui.QStandardItemModel(self)
             currentframe = self.currentFrames[framenum]
@@ -121,7 +122,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             items = []
             values = []
             for label in labels:
-                item = QStandardItem(label)
+                item = QStandardItem(label.replace("_",""))
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 items.append(item)
                 value = QStandardItem(str(getattr(currentframe, label)))
@@ -132,7 +133,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.metadata.setModel(self.metadatamodel)
 
             self.biglabel.setPixmap(ip.convertToPixmap(currentframe.image,1280,720))
-            self.highlightedframes.append(int(framenum))
+            if framenum not in self.highlightedframes:
+                self.highlightedframes.append(int(framenum))
 
     def removeHighlighted(self,framenum):
         print("highlighted frames: " + ' '.join(str(e) for e in self.highlightedframes))
@@ -140,6 +142,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             print("removing " + str(framenum))
             self.highlightedframes.remove(framenum)
         print("remaining frames: " + ' '.join(str(e) for e in self.highlightedframes))
+
     def saveMetaData(self,framenum):
         if self.maintabWidget.currentIndex() == 2:
             targetframes = [self.currentFrames[i] for i in self.highlightedframes]
@@ -189,9 +192,9 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             else:
                 targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
             self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
-            for label in self.labels:
-                label.notHighlighted()
-            self.highlightedframes = []
+#            for label in self.labels:
+#                label.notHighlighted()
+#            self.highlightedframes = []
             self.fillGallery()
             self.updateVideoPlayer()
 
@@ -290,6 +293,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 self.labels[i].clear()
                 self.labels[i].setIndex(-1)
                 self.numbers[i].display(0)
+            self.labels[i].notHighlighted()
+        self.highlightedframes = []
 
     def showWarning(self,error):
         if isinstance(error, tuple):
