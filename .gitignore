@@ -4,5 +4,8 @@ __pycache__/
 
 # Do not include temporary test files
 createtestfiles.py
-model/test.py
-testdata/*
+testdata/
+
+visiondatamanagement.egg-info/
+build/
+dist/
