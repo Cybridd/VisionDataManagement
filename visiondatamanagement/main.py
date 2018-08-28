@@ -144,16 +144,17 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         print("remaining frames: " + ' '.join(str(e) for e in self.highlightedframes))
 
     def saveMetaData(self,framenum):
-        if self.maintabWidget.currentIndex() == 2:
-            targetframes = [self.currentFrames[i] for i in self.highlightedframes]
-        else:
-            targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
-        for targetframe in targetframes:
-            for i in xrange(self.metadatamodel.rowCount()):
-                field = str(self.metadatamodel.item(i,0).text())
-                value = str(self.metadatamodel.item(i,1).text())
-                if field == 'label':
-                    setattr(targetframe, field, value)
+        if self.currentFrames:
+            if self.maintabWidget.currentIndex() == 2:
+                targetframes = [self.currentFrames[i] for i in self.highlightedframes]
+            else:
+                targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
+            for targetframe in targetframes:
+                for i in xrange(self.metadatamodel.rowCount()):
+                    field = str(self.metadatamodel.item(i,0).text())
+                    value = str(self.metadatamodel.item(i,1).text())
+                    if field == 'label':
+                        setattr(targetframe, field, value)
 
     def getVideoFrames(self):
         if self.currentFile:
@@ -247,14 +248,15 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         self.videoPlayer = VideoPlayer(self.currentFile,self.isRetinaEnabled,self,webcammode)
         self.pauseButton.clicked.connect(self.videoPlayer.pause)
         self.startButton.clicked.connect(self.videoPlayer.start)
-        self.skipBackButton.clicked.connect(self.videoPlayer.skipBck)
-        self.skipForwardButton.clicked.connect(self.videoPlayer.skipFwd)
-        self.scrubSlider.valueChanged.connect(self.sendFramePos)
         self.pauseButton_2.clicked.connect(self.videoPlayer.pause)
         self.startButton_2.clicked.connect(self.videoPlayer.start)
-        self.skipBackButton_2.clicked.connect(self.videoPlayer.skipBck)
-        self.skipForwardButton_2.clicked.connect(self.videoPlayer.skipFwd)
-        self.scrubSlider_2.valueChanged.connect(self.sendFramePos)
+        if not webcammode:
+            self.skipBackButton.clicked.connect(self.videoPlayer.skipBck)
+            self.skipForwardButton.clicked.connect(self.videoPlayer.skipFwd)
+            self.scrubSlider.valueChanged.connect(self.sendFramePos)
+            self.skipBackButton_2.clicked.connect(self.videoPlayer.skipBck)
+            self.skipForwardButton_2.clicked.connect(self.videoPlayer.skipFwd)
+            self.scrubSlider_2.valueChanged.connect(self.sendFramePos)
 
     def sendFramePos(self):
         framePos = self.scrubSlider.value()
@@ -267,11 +269,18 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             self.browseButton.setDisabled(True)
             self.browseFolderButton.setDisabled(True)
             self.scrubSlider.setDisabled(True)
+            self.skipBackButton.setDisabled(True)
+            self.skipForwardButton.setDisabled(True)
         else:
+            self.skipBackButton.setDisabled(False)
+            self.skipForwardButton.setDisabled(False)
             if self.currentFrames:
                 self.startVideoPlayer()
+            else:
+                self.videoPlayer = None
             self.browseButton.setDisabled(False)
             self.browseFolderButton.setDisabled(False)
+
 
     def fillGallery(self):
         if self.maintabWidget.currentIndex() == 0:
@@ -281,7 +290,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 tempindex = i + (16 * self.verticalSlider_3.value())
                 if tempindex < len(self.currentFrames):
                     currentframe = self.currentFrames[tempindex]
-                    #print("Adding image " +  str(tempindex))
                     self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
                     self.labels[i].setIndex(tempindex)
                     self.numbers[i].display(currentframe.framenum)
@@ -306,6 +314,7 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
         '1L' : 'There was a problem with the format of the metadata',
         'NoFrames' : 'Please load images before loading metadata',
         'HDF5Format' : 'There was a problem with the format of the HDF5 file',
+        'CSVFormat' : 'There was a problem with the format of the CSV file',
         'FileType' : 'File type not supported',
         'InvalidFrameNum' : 'Frame number must be an integer'
         }

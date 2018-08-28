@@ -83,16 +83,19 @@ def loadhdf5(filename, frames, concurrbackproject=False):
     count = 1
     if 'vector' in hdf5_open.keys():
         for i in xrange(len(hdf5_open['vector'])):
-            if 'retinatype' in hdf5_open.keys():
-                v = ImageVector(vector=hdf5_open['vector'][i],
-                    label=hdf5_open['label'][i].tostring(),
-                    fixationy=int(hdf5_open['fixationy'][i]),
-                    fixationx=int(hdf5_open['fixationx'][i]),
-                    retinatype=hdf5_open['retinatype'][i].tostring())
-            else:
-                v = ImageVector(vector=hdf5_open['vector'][i])
-            v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
-            v._timestamp = hdf5_open['timestamp'][i].tostring() if 'timestamp' in hdf5_open.keys() else None
+            try:
+                if 'retinatype' in hdf5_open.keys():
+                    v = ImageVector(vector=hdf5_open['vector'][i],
+                        label=hdf5_open['label'][i].tostring(),
+                        fixationy=int(hdf5_open['fixationy'][i]),
+                        fixationx=int(hdf5_open['fixationx'][i]),
+                        retinatype=hdf5_open['retinatype'][i].tostring())
+                else:
+                    v = ImageVector(vector=hdf5_open['vector'][i])
+                v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
+                v._timestamp = hdf5_open['timestamp'][i].tostring() if 'timestamp' in hdf5_open.keys() else None
+            except:
+                raise Exception('HDF5Format')
             count += 1
             currentframes.append(v)
         print("Vector shape: " + str(currentframes[0]._vector.shape))
@@ -148,7 +151,7 @@ def saveHDF5(exportname, frames):
 
     hdf5_file.close()
 
-def loadCsv(filename, frames):
+def loadCsv(filename, frames, concurrbackproject=False):
     metadata = pd.read_csv(filename,delimiter=";",encoding="utf-8")#,index_col="framenum"
     currentframes = frames if frames else []
     print(metadata.shape)
@@ -173,45 +176,47 @@ def loadCsv(filename, frames):
         # create new vector objects
         count = 1
         for i in xrange(metadata.shape[0]):
-            print(metadata.shape[0])
             if metadata['vector'][i].startswith('['):
-                print("We're here")
                 vtemp = re.findall("\[(.*?)\]", metadata['vector'][i])
-                print(vtemp[0])
+                #print(vtemp[0])
                 for j in xrange(len(vtemp)):
                     vtemp[j] = [x for x in vtemp[j].split(' ') if x]
-                print(vtemp[0])
+                #print(vtemp[0])
                 vtemp = np.asarray([x for x in vtemp], dtype=np.float64)
                 vector = np.asarray(vtemp,dtype=np.float64)
             else:
                 vector = np.asarray(metadata['vector'][i].split(","),
                     dtype=np.float64)
-            print("Fixation Y: " + str(metadata['fixationy'][i]))
-            print("Fixation X: " + str(metadata['fixationx'][i]))
-            v = ImageVector(vector=vector,
-                label=metadata['label'][i],
-                fixationy=int(metadata['fixationy'][i]),
-                fixationx=int(metadata['fixationx'][i]),
-                retinatype=metadata['retinatype'][i])
-            v.framenum = int(metadata['framenum'][i]) if 'framenum' in cols else count
-            v._timestamp = metadata['timestamp'][i] if 'timestamp' in cols else None
+            try:
+                v = ImageVector(vector=vector,
+                    label=metadata['label'][i],
+                    fixationy=int(metadata['fixationy'][i]),
+                    fixationx=int(metadata['fixationx'][i]),
+                    retinatype=metadata['retinatype'][i])
+                v.framenum = int(metadata['framenum'][i]) if 'framenum' in cols else count
+                v._timestamp = metadata['timestamp'][i] if 'timestamp' in cols else None
+            except:
+                raise Exception('CSVFormat')
             count += 1
             currentframes.append(v)
         print("Vector shape: " + str(currentframes[0]._vector.shape))
-        backshape = (720,1280,currentframes[0]._vector.shape[-1])
-        print("Backprojection shape: " + str(backshape))
-        R = startRetina()
-        for frame in currentframes:
-            start = time.time()
-            fixation=(frame.fixationy,frame.fixationx)
-            frame.image = R.backproject(frame._vector,backshape,fix=fixation)
-            end = time.time()
-            print("Backprojection took "+ str(end-start) + " seconds.")
-        #cpucount = mp.cpu_count() - 1
-        #pool = mp.Pool(cpucount)
-        #images = pool.map(getBackProjections, currentframes)
-        #for i in xrange(len(currentframes)):
-        #    currentframes[i].image = images[i]
+        if concurrbackproject:
+            print("Beginning backprojection using multiprocessing...")
+            cpucount = mp.cpu_count() - 1
+            pool = mp.Pool(cpucount)
+            images = pool.map(getBackProjections, currentframes)
+            for i in xrange(len(currentframes)):
+                currentframes[i].image = images[i]
+        else:
+            backshape = (720,1280,currentframes[0]._vector.shape[-1])
+            print("Backprojection shape: " + str(backshape))
+            R = startRetina()
+            for frame in currentframes:
+                start = time.time()
+                fixation=(frame.fixationy,frame.fixationx)
+                frame.image = R.backproject(frame._vector,backshape,fix=fixation)
+                end = time.time()
+                print("Backprojection took "+ str(end-start) + " seconds.")
     return currentframes
 
 def saveCSV(exportname, frames):
