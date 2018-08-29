@@ -1,17 +1,17 @@
 import sys
 import os
+from os.path import join
+import re
+import time
+import multiprocessing as mp
 import numpy as np
 import pandas as pd
 import cv2
 import h5py
-import re
-import time
-import multiprocessing as mp
 from PyQt5 import QtGui, QtCore
 from QtGui import QImage, QPixmap
 from QtCore import Qt
-from os.path import join
-from model import Image, ImageVector, Video
+from model import Image, ImageVector
 from retinavision.retina import Retina
 from retinavision.cortex import Cortex
 from retinavision import datadir, utils

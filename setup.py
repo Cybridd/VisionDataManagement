@@ -18,7 +18,7 @@ setup(
     long_description=read('README.md'),
     install_requires=[read(os.path.join('visiondatamanagement','requirements.txt'))],
     dependency_links=[
-    "https://Cybridd:Jaguar82!@github.com/Pozimek/RetinaVision@1693fbcaad0813a0bc8937b6dd4288cbdd273e4c#egg=retinavision-0.9",
+    "git+ssh://git@github.com/Pozimek/RetinaVision@1693fbcaad0813a0bc8937b6dd4288cbdd273e4c#egg=retinavision-0.9",
     "git://github.com/pyqt/python-qt5#egg=python-qt5",
     ],
 )
