@@ -50,7 +50,7 @@ def createCortex():
 
 def convertToPixmap(frame, x, y):
     if frame.shape[-1] == 3:
-        frame = cv2.cvtColor(frame,cv2.cv2.COLOR_BGR2RGB)
+        #frame = cv2.cvtColor(frame,cv2.cv2.COLOR_BGR2RGB)
         format = QImage.Format_RGB888
     else:
         format = QImage.Format_Grayscale8

@@ -62,7 +62,7 @@ class VideoPlayer(QWidget):
         self.webcam = webcammode
         if file:
             self.file = file
-            self.isVideo = isinstance(file,Video) # self.file.split(".")[-1] in self.filetypes.keys()
+            self.isVideo = isinstance(file,Video)
         self.timer = QTimer()
         self.timer.timeout.connect(self.nextFrame)
         self.frames = parent.currentFrames

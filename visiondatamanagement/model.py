@@ -1,3 +1,11 @@
+"""
+Created on 08/07/2018 14:31
+
+Model for the vision data management system.
+
+@author: Connor Fulton
+"""
+
 import sys
 import os
 import csv
@@ -5,7 +13,7 @@ import cv2
 from os.path import join
 
 class ImageVector(object):
-
+    """Represents an imagevector and its associated metadata"""
     def __init__(self,vector,id=None,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
         self._vector = vector
         self.id = id
@@ -21,7 +29,7 @@ class ImageVector(object):
         return ['id','framenum','_timestamp','label','fixationy','fixationx','retinatype']
 
 class Image(object):
-
+    """Represents an image file and its associated metadata"""
     def __init__(self,image=None,name=None,filepath=None,colortype=None,parent=None,framenum=None,label=None):
         self.vector = None
         self.type = None
@@ -45,7 +53,7 @@ class Image(object):
         return ['name','type','framenum','colortype','label']
 
 class Video(object):
-
+    """Represents a video file, its metadata and individual frames if generated"""
     filetypes = {
         'mp4': 'mp4v',
         'avi': 'xvid'
@@ -56,10 +64,11 @@ class Video(object):
         self.filepath = filepath
         self.type = filepath.split('.')[-1]
         self.colortype = colortype
-        self.frames = None # don't fill these on load, takes to long without threading
+        self.frames = None # list of Images, filled upon user request
         self.numFrames = None
 
     def getFrames(self):
+        """Use OpenCV to split the video file into frames and capture them"""
         self.cap = cv2.VideoCapture(self.filepath)
         codec = cv2.VideoWriter_fourcc(*self.filetypes[self.type])
         self.cap.set(cv2.CAP_PROP_FOURCC, codec)
@@ -76,6 +85,7 @@ class Video(object):
         return self.frames
 
     def saveFramesImageOnly(self):
+        """Save the image back to file if required"""
         frames_dir = join(self.filepath.split("/")[0], "Frames")
         if not os.path.exists(frames_dir):
             os.makedirs(frames_dir)
