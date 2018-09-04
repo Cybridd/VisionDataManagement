@@ -1,3 +1,13 @@
+"""
+Created on 8/10/2018 18:59
+
+Subclasses of Qt's QObject hierarchy. ClickLabel adds on-click signals and an
+index attribute to QLabel, and VideoPlayer uses a QTimer and OpenCV to update
+observing UI elements (QLabels) with a 30fps video stream.
+
+@author: Connor Fulton
+"""
+
 from PyQt5 import QtWidgets, QtCore
 from QtWidgets import *
 from QtCore import pyqtSignal, QTimer
@@ -7,7 +17,7 @@ import processing as ip
 import cv2
 
 class ClickLabel(QLabel):
-
+    """Adds on-click functionality to Qt's QLabel"""
     clicked=pyqtSignal(int)
     unhighlighted=pyqtSignal(int)
 
@@ -17,7 +27,6 @@ class ClickLabel(QLabel):
         self.highlighted = False
 
     def mousePressEvent(self, event):
-        #self.clicked.emit(self.index)
         self.highlighted = not self.highlighted
         if self.highlighted:
             self.makeHighlighted()
@@ -38,6 +47,10 @@ class ClickLabel(QLabel):
         self.setLineWidth(1)
 
 class VideoPlayer(QWidget):
+    """Enables playback functions and broadcasting of video stream to UI elements
+
+    Subscribers are named individually because they require different images or data
+    """
 
     video = None
     videoFrame = None
@@ -66,14 +79,17 @@ class VideoPlayer(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.nextFrame)
         self.frames = parent.currentFrames
+        # set up video capture dependent on source
         if self.isVideo:
             self.cap = cv2.VideoCapture(self.file.filepath)
             codec = cv2.VideoWriter_fourcc(*self.filetypes[self.file.type])
             self.cap.set(cv2.CAP_PROP_FOURCC, codec)
             self.maxFrames = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        # if webcam mode, start immediately
         elif self.webcam:
             self.cap = cv2.VideoCapture(0)
             self.timer.start(1000.0/30)
+        # if still images, no need for video capture
         else:
             self.maxFrames = len(self.frames) - 1
         self.parent.scrubSlider.setRange(0,self.maxFrames)
@@ -89,6 +105,7 @@ class VideoPlayer(QWidget):
 
 
     def nextFrame(self):
+        """Retrieves next frame for display whether video or image"""
         if self.isVideo or self.webcam:
             ret, frame = self.cap.read()
             if ret:
@@ -113,6 +130,7 @@ class VideoPlayer(QWidget):
         self.parent.startButton_2.setDisabled(False)
 
     def setCurrent(self):
+        """Sets the current frame based on user input from playback buttons"""
         if self.framePos <= self.maxFrames:
             if self.isVideo:
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.framePos)
@@ -133,20 +151,19 @@ class VideoPlayer(QWidget):
         self.setCurrent()
 
     def updateDisplay(self, frame):
+        """Update all subscribed UI elements with images or data"""
         self.parent.scrubSlider.setValue(self.framePos)
         self.parent.scrubSlider_2.setValue(self.framePos)
         self.parent.frameNum.display(self.framePos)
         self.parent.frameNum_2.display(self.framePos)
+        # update the metadata table if we're on the main tab
         if self.parent.maintabWidget.currentIndex() == 1:
             self.parent.displayMetaData(self.framePos)
         self.videoFrame.setPixmap(ip.convertToPixmap(frame, 480, 360))
+        # if retina is activated display live backprojection and cortical image
         if self.retina:
-            start = time.time()
             v = self.retina.sample(frame,self.fixation)
-            print(frame.shape)
             tight = self.retina.backproject_last()
-            end = time.time()
-            print("Frame took " + str(end - start) + " seconds.")
             cortical = self.cortex.cort_img(v)
             self.focalFrame.setPixmap(ip.convertToPixmap(tight, 480, 360))
             self.corticalFrame.setPixmap(ip.convertToPixmap(cortical, 480, 360))

@@ -1,3 +1,19 @@
+"""
+Created on 8/15/2018 14:14
+
+Unit tests for the VDM application. Contains both functional and performance
+tests as separate cases.
+
+A note about the test data:
+If the test data is imported into the application right now it looks very blue.
+This is because it is BGR instead of RGB, and I did not have time to regenerate
+all the test data with the new vectortype descriptor, which would inform the
+program to swap the color channels to RGB. Other than making me look like Yondu
+from Guardians of the Galaxy, the test data works just fine.
+
+@author: Connor Fulton
+"""
+
 import unittest
 import sys
 import os

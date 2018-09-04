@@ -14,7 +14,7 @@ from os.path import join
 
 class ImageVector(object):
     """Represents an imagevector and its associated metadata"""
-    def __init__(self,vector,id=None,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None):
+    def __init__(self,vector,id=None,framenum=None,timestamp=None,label=None,fixationy=None,fixationx=None,retinatype=None,vectortype=None):
         self._vector = vector
         self.id = id
         self.image = None # backprojected image for display
@@ -24,9 +24,10 @@ class ImageVector(object):
         self.fixationy = fixationy
         self.fixationx = fixationx
         self.retinatype = retinatype
+        self.vectortype = vectortype
 
     def __dir__(self):
-        return ['id','framenum','_timestamp','label','fixationy','fixationx','retinatype']
+        return ['id','framenum','_timestamp','label','fixationy','fixationx','retinatype','vectortype']
 
 class Image(object):
     """Represents an image file and its associated metadata"""
@@ -46,6 +47,7 @@ class Image(object):
         self.label = label
 
     def saveImageOnly(self,dir):
+        """Save the image back to file if required"""
         print("Saving image")
         cv2.imwrite(join(dir,"frame%d.png" % self.framenum), self.image)
 
@@ -85,7 +87,7 @@ class Video(object):
         return self.frames
 
     def saveFramesImageOnly(self):
-        """Save the image back to file if required"""
+        """Saves the images back to file if required"""
         frames_dir = join(self.filepath.split("/")[0], "Frames")
         if not os.path.exists(frames_dir):
             os.makedirs(frames_dir)

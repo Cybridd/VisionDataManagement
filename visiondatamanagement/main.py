@@ -269,9 +269,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             else:
                 targetframes = [f for f in self.currentFrames if f.framenum == self.getCurrentFrameNum()]
             self.currentFrames = [f for f in self.currentFrames if f not in targetframes]
-#            for label in self.labels:
-#                label.notHighlighted()
-#            self.highlightedframes = []
             # update after changes
             self.fillGallery()
             self.updateVideoPlayer()
@@ -378,7 +375,8 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
                 tempindex = i + (16 * self.verticalSlider_3.value())
                 if tempindex < len(self.currentFrames):
                     currentframe = self.currentFrames[tempindex]
-                    self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180))
+                    self.labels[i].setPixmap(ip.convertToPixmap(currentframe.image,320,180,
+                        currentframe.vectortype == 'BGR'))
                     self.labels[i].setIndex(tempindex)
                     self.numbers[i].display(currentframe.framenum)
                 else:
@@ -421,9 +419,6 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
 def main():
     app = QApplication(sys.argv)
     form = DMApp()
-    #qtmodern.styles.dark(app)
-    #mw = qtmodern.windows.ModernWindow(form)
-    #mw.show()
     app.setStyle('Fusion')
     form.show()
     app.exec_()
