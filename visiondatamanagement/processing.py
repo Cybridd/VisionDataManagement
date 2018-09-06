@@ -9,6 +9,7 @@ by worker threads, the others are used by this class and by the controller.
 
 import sys
 import os
+from functools import partial
 from os.path import join
 import re
 import time
@@ -53,9 +54,9 @@ def getBackProjection(R,V,shape,fix):
     """Proxy function for Retina.backproject()"""
     return R.backproject(V,shape,fix)
 
-def getBackProjections(frame):
+def getBackProjections(frame, R):
     """Gets backprojection given only an image. Similar to a Python partial function"""
-    R = startRetina()
+    #R = startRetina()
     backshape = (720,1280,frame._vector.shape[-1])
     return getBackProjection(R,frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
 
@@ -76,6 +77,7 @@ def convertToPixmap(frame, x, y, BGR=False):
     frame : image to be displayed
     x : width needed
     y : height needed
+    BGR : boolean if colour space is BGR
     """
 
     if frame.shape[-1] == 3:
@@ -160,7 +162,8 @@ def loadhdf5(filename, frames, concurrbackproject=False):
             print("Beginning backprojection using multiprocessing...")
             cpucount = mp.cpu_count() - 1
             pool = mp.Pool(cpucount)
-            images = pool.map(getBackProjections, currentframes)
+            partialgetBackProject = partial(getBackProjections, R=startRetina())
+            images = pool.map(partialgetBackProject, currentframes)
             for i in xrange(len(currentframes)):
                 currentframes[i].image = images[i]
         # generate backprojections in this thread
@@ -170,6 +173,8 @@ def loadhdf5(filename, frames, concurrbackproject=False):
             for frame in currentframes:
                 start = time.time()
                 frame.image = R.backproject(frame._vector,backshape,fix=(frame.fixationy,frame.fixationx))
+                #encode_param = [int(cv2.IMWRITE_PNG_COMPRESSION), 3]
+                #result, frame.image = cv2.imencode('.png',im,encode_param)
                 end = time.time()
                 # inform the user of current performance for diagnostics
                 print("Backprojection took "+ str(end-start) + " seconds.")

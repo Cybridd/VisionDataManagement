@@ -88,6 +88,7 @@ class VideoPlayer(QWidget):
         # if webcam mode, start immediately
         elif self.webcam:
             self.cap = cv2.VideoCapture(0)
+            self.isBGR = True
             self.timer.start(1000.0/30)
         # if still images, no need for video capture
         else:
@@ -159,14 +160,16 @@ class VideoPlayer(QWidget):
         # update the metadata table if we're on the main tab
         if self.parent.maintabWidget.currentIndex() == 1:
             self.parent.displayMetaData(self.framePos)
-        self.videoFrame.setPixmap(ip.convertToPixmap(frame, 480, 360))
+        if not (self.isVideo or self.webcam):
+            self.isBGR = currentframe.vectortype == 'BGR'
+        self.videoFrame.setPixmap(ip.convertToPixmap(frame, 480, 360, self.isBGR))
         # if retina is activated display live backprojection and cortical image
         if self.retina:
             v = self.retina.sample(frame,self.fixation)
             tight = self.retina.backproject_last()
             cortical = self.cortex.cort_img(v)
-            self.focalFrame.setPixmap(ip.convertToPixmap(tight, 480, 360))
-            self.corticalFrame.setPixmap(ip.convertToPixmap(cortical, 480, 360))
-            self.focusFrame.setPixmap(ip.convertToPixmap(cortical, 1280, 720))
+            self.focalFrame.setPixmap(ip.convertToPixmap(tight, 480, 360, self.isBGR))
+            self.corticalFrame.setPixmap(ip.convertToPixmap(cortical, 480, 360, self.isBGR))
+            self.focusFrame.setPixmap(ip.convertToPixmap(cortical, 1280, 720, self.isBGR))
         else:
-            self.focusFrame.setPixmap(ip.convertToPixmap(frame, 1280, 720))
+            self.focusFrame.setPixmap(ip.convertToPixmap(frame, 1280, 720, self.isBGR))

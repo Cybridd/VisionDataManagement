@@ -4,6 +4,7 @@ __pycache__/
 
 # Do not include temporary test files
 createtestfiles.py
+createfigureimages.py
 testdata/
 
 visiondatamanagement.egg-info/
