@@ -197,7 +197,7 @@ class PerformanceTests(TestCase):
     # Loading a HDF5 file. Generation of backprojections is included in this test,
     # as this is always the procedure. This requires the majority of the execution
     # time.
-    #@unittest.skip("Skipping HDF5 load performance test")
+    @unittest.skip("Skipping HDF5 load performance test")
     def test_hdf5_loading_performance(self):
         # key: sm - small file, lg - large file, nc - nonconcurrent, c - nonconcurrent, vf - varying fixation
 
@@ -209,10 +209,10 @@ class PerformanceTests(TestCase):
         sm_nc_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfilesmall.h5"),None)',setup=setup,number=runs)
         print("Average time to load small hdf5 non-concurrently ("+str(runs)+" runs): " + str(sm_nc_times/float(runs)) + " seconds", file=results)
 
-#        gc.collect()
+        #gc.collect()
 
-#        sm_c_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfilesmall.h5"),None,concurrbackproject=True)',setup=setup,number=runs)
-#        print("Average time to load small hdf5 concurrently ("+str(runs)+" runs): " + str(sm_c_times/float(runs)) + " seconds", file=results)
+        #sm_c_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfilesmall.h5"),None,concurrbackproject=True)',setup=setup,number=runs)
+        #print("Average time to load small hdf5 concurrently ("+str(runs)+" runs): " + str(sm_c_times/float(runs)) + " seconds", file=results)
 
         gc.collect()
 
@@ -234,11 +234,6 @@ class PerformanceTests(TestCase):
         lg_nc_vf_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","varyingfixationfile.h5"),None)',setup=setup,number=runs)
         print("Average time to load large hdf5 with varying fixation non-concurrently ("+str(runs)+" runs): " + str(lg_nc_vf_times/float(runs)) + " seconds", file=results)
 
-        #results.write("Average time to load small hdf5 non-concurrently ("+str(runs)+" runs): " + str(sm_nc_times/float(runs)) + " seconds")
-        #results.write("Average time to load small hdf5 concurrently ("+str(runs)+" runs): " + str(sm_c_times/float(runs)) + " seconds")
-        #results.write("Average time to load large hdf5 non-concurrently ("+str(runs)+" runs): " + str(lg_nc_times/float(runs)) + " seconds")
-        #results.write("Average time to load small hdf5 with varying fixation non-concurrently ("+str(runs)+" runs): " + str(sm_nc_vf_times/float(runs)) + " seconds")
-
         print("HDF5 loading performance tests complete.")
 
     @unittest.skip("Skipping CSV load performance test")
@@ -246,36 +241,37 @@ class PerformanceTests(TestCase):
         # key: sm - small file, lg - large file, nc - nonconcurrent, c - nonconcurrent, vf - varying fixation
 
         sm_nc_times,sm_c_times,lg_nc_times,lg_c_times = (0 for i in range(4))
-        setup = "import processing as ip; import os"
-        runs = 1
+        setup = "import gc;gc.enable();import processing as ip; import os"
+        runs = 10
+        results = open('csv_loading_results.txt','w')
 
-        sm_nc_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfilesmall.csv"),None)',setup=setup,number=runs)
-        print("Average time to load small csv non-concurrently ("+str(runs)+" runs): " + str(sm_nc_times/float(runs)) + " seconds")
-
-        gc.collect()
-
-        sm_c_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfilesmall.csv"),None,concurrbackproject=True)',setup=setup,number=runs)
-        print("Average time to load small csv concurrently ("+str(runs)+" runs): " + str(sm_c_times/float(runs)) + " seconds")
+        sm_nc_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","testfilesmall.csv"),None)',setup=setup,number=runs)
+        print("Average time to load small csv non-concurrently ("+str(runs)+" runs): " + str(sm_nc_times/float(runs)) + " seconds",file=results)
 
         gc.collect()
 
-        lg_nc_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfile.csv"),None)',setup=setup,number=runs)
-        print("Average time to load large csv non-concurrently ("+str(runs)+" runs): " + str(lg_nc_times/float(runs)) + " seconds")
+        #sm_c_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","testfilesmall.csv"),None,concurrbackproject=True)',setup=setup,number=runs)
+        #print("Average time to load small csv concurrently ("+str(runs)+" runs): " + str(sm_c_times/float(runs)) + " seconds",file=results)
+
+        #gc.collect()
+
+        lg_nc_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","testfile.csv"),None)',setup=setup,number=runs)
+        print("Average time to load large csv non-concurrently ("+str(runs)+" runs): " + str(lg_nc_times/float(runs)) + " seconds",file=results)
 
         gc.collect()
 
-        lg_c_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","testfile.csv"),None,concurrbackproject=True)',setup=setup,number=runs)
-        print("Average time to load large csv concurrently ("+str(runs)+" runs): " + str(lg_c_times/float(runs)) + " seconds")
+        #lg_c_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","testfile.csv"),None,concurrbackproject=True)',setup=setup,number=runs)
+        #print("Average time to load large csv concurrently ("+str(runs)+" runs): " + str(lg_c_times/float(runs)) + " seconds",file=results)
+
+        #gc.collect()
+
+        sm_nc_vf_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","varyingfixationfilesmall.csv"),None)',setup=setup,number=runs)
+        print("Average time to load small csv with varying fixation non-concurrently ("+str(runs)+" runs): " + str(sm_nc_vf_times/float(runs)) + " seconds",file=results)
 
         gc.collect()
 
-        sm_nc_vf_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","varyingfixationfilesmall.csv"),None)',setup=setup,number=runs)
-        print("Average time to load small csv with varying fixation non-concurrently ("+str(runs)+" runs): " + str(sm_nc_vf_times/float(runs)) + " seconds")
-
-        gc.collect()
-
-        lg_nc_vf_times = timeit.timeit('ip.loadhdf5(os.path.join("testdata","varyingfixationfile.csv"),None)',setup=setup,number=runs)
-        print("Average time to load large csv with varying fixation non-concurrently ("+str(runs)+" runs): " + str(sm_nc_vf_times/float(runs)) + " seconds")
+        lg_nc_vf_times = timeit.timeit('ip.loadCsv(os.path.join("testdata","varyingfixationfile.csv"),None)',setup=setup,number=runs)
+        print("Average time to load large csv with varying fixation non-concurrently ("+str(runs)+" runs): " + str(lg_nc_vf_times/float(runs)) + " seconds",file=results)
 
         print("CSV loading performance tests complete.")
 
@@ -283,19 +279,47 @@ class PerformanceTests(TestCase):
     def test_hdf5_saving_performance(self):
         # key: sm - small file, lg - large file
 
+        sm_times,lg_times = (0 for i in range(2))
+        setup = "import gc;gc.enable();import processing as ip; import os"
+        runs = 10
+        results = open('hdf5_saving_results.txt','w')
+
+        #testframes = ip.loadhdf5(os.path.join("testdata","testfilesmall.h5"),None)
+        sm_times = timeit.timeit('ip.saveHDF5(os.path.join("testdata","savetestfilesmall.h5"),ip.loadhdf5(os.path.join("testdata","testfilesmall.h5"),None))',setup=setup,number=runs)
+        print("Average time to save small hdf5 ("+str(runs)+" runs): " + str(sm_times/float(runs)) + " seconds", file=results)
+
+        gc.collect()
+
+        #testframes = ip.loadhdf5(os.path.join("testdata","testfile.h5"),None)
+        lg_times = timeit.timeit('ip.saveHDF5(os.path.join("testdata","savetestfile.h5"),ip.loadhdf5(os.path.join("testdata","testfile.h5"),None))',setup=setup,number=runs)
+        print("Average time to save large hdf5 ("+str(runs)+" runs): " + str(lg_times/float(runs)) + " seconds", file=results)
+
+        gc.collect()
+
+        print("HDF5 saving performance tests complete.")
+
+    #@unittest.skip("Skipping HDF5 saving performance test")
+    def test_csv_saving_performance(self):
+        # key: sm - small file, lg - large file
+
         sm_times,lg_imes = (0 for i in range(2))
-        setup = "import processing as ip; import os"
-        runs = 1
-        # LOAD HDF5 FILE
-        sm_nc_times = timeit.timeit('ip.saveHDF5(os.path.join("testdata","savetestfilesmall.h5"),None)',setup=setup,number=runs)
-        print("Average time to save small hdf5 non-concurrently ("+str(runs)+" runs): " + str(sm_nc_times/float(runs)) + " seconds")
+        setup = "import gc;gc.enable();import processing as ip; import os"
+        runs = 10
+        results = open('csv_saving_results.txt','w')
+
+        #testframes = ip.loadCsv(os.path.join("testdata","testfilesmall.csv"),None)
+        sm_times = timeit.timeit('ip.saveCSV(os.path.join("testdata","savetestfilesmall.csv"),ip.loadCsv(os.path.join("testdata","testfilesmall.csv"),None))',setup=setup,number=runs)
+        print("Average time to save small CSV ("+str(runs)+" runs): " + str(sm_times/float(runs)) + " seconds", file=results)
 
         gc.collect()
-        # LOAD HDF5 FILE
-        lg_nc_times = timeit.timeit('ip.saveHDF5(os.path.join("testdata","savetestfile.h5"),None)',setup=setup,number=runs)
-        print("Average time to save large hdf5 non-concurrently ("+str(runs)+" runs): " + str(lg_nc_times/float(runs)) + " seconds")
+
+        #testframes = ip.loadCsv(os.path.join("testdata","testfile.csv"),None)
+        lg_times = timeit.timeit('ip.saveCSV(os.path.join("testdata","savetestfile.csv"),ip.loadCsv(os.path.join("testdata","testfile.csv"),None))',setup=setup,number=runs)
+        print("Average time to save large CSV ("+str(runs)+" runs): " + str(lg_times/float(runs)) + " seconds", file=results)
 
         gc.collect()
+
+        print("CSV saving performance tests complete.")
 
 if __name__ == '__main__':
     unittest.main(exit=False)

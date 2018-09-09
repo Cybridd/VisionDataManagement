@@ -7,6 +7,7 @@ Main class for the VDM application.
 """
 
 import sys
+import GPUtil
 import design
 import processing as ip
 from customwidgets import VideoPlayer, ClickLabel
@@ -298,11 +299,11 @@ class DMApp(QMainWindow, design.Ui_MainWindow):
             # start different workers depending on file type
             if filetype == 'pkl':
                 utils.writePickle(fileName, self.currentFrames)
-            elif filetype == 'h5':
+            elif filetype == 'h5' and isinstance(self.currentFrames[0],ImageVector):
                 self.startWorker(ip.saveHDF5,None,self.generateButton.setText("Done!"),
                     self.exportfilename,self.currentFrames)
                 self.generateButton.setText("Saving to HDF5...")
-            elif filetype == 'csv':
+            elif filetype == 'csv' and isinstance(self.currentFrames[0],ImageVector):
                 self.startWorker(ip.saveCSV,None,None,self.exportfilename,self.currentFrames)
                 self.generateButton.setText("Saving to CSV...")
             else:

@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import cv2
 import h5py
+import GPUtil
 from PyQt5 import QtGui, QtCore
 from QtGui import QImage, QPixmap
 from QtCore import Qt
@@ -25,6 +26,12 @@ from model import Image, ImageVector
 from retinavision.retina import Retina
 from retinavision.cortex import Cortex
 from retinavision import datadir, utils
+
+
+def isGPUAvailable():
+    DEVICE_LIST = [gpu.name for gpu in GPUtil.getGPUs()]
+    print DEVICE_LIST
+    return ["GeForce" in d for d in DEVICE_LIST]
 
 def prepareLiveRetina(cap):
     """Performs extra preparation steps for using the retina with a webcam
@@ -45,7 +52,7 @@ def prepareLiveRetina(cap):
 
 def startRetina():
     """Instantiates Retina object and loads necessary files"""
-    retina = Retina()
+    retina = Retina(isGPUAvailable())
     retina.loadLoc(join(datadir, "retinas", "ret50k_loc.pkl"))
     retina.loadCoeff(join(datadir, "retinas", "ret50k_coeff.pkl"))
     return retina
@@ -62,7 +69,7 @@ def getBackProjections(frame, R):
 
 def createCortex():
     """Instantiates Cortex object and loads necessary files"""
-    cortex = Cortex()
+    cortex = Cortex(isGPUAvailable())
     lp = join(datadir, "cortices", "50k_Lloc_tight.pkl")
     rp = join(datadir, "cortices", "50k_Rloc_tight.pkl")
     cortex.loadLocs(lp, rp)
@@ -151,7 +158,7 @@ def loadhdf5(filename, frames, concurrbackproject=False):
                 # load these metadata items if available, else an alternative
                 v.framenum = int(hdf5_open['framenum'][i]) if 'framenum' in hdf5_open.keys() else count
                 v._timestamp = hdf5_open['timestamp'][i].tostring() if 'timestamp' in hdf5_open.keys() else None
-                v.vectortype = hdf5_open['vectortype'][i].tostring() if 'vectortype' in hdf5_open.keys() else None
+                v.vectortype = hdf5_open['vectortype'][i].tostring() if 'vectortype' in hdf5_open.keys() else "teststring"
             except:
                 raise Exception('HDF5Format')
             count += 1
@@ -330,6 +337,7 @@ def saveCSV(exportname, frames):
     df = pd.DataFrame([{fn: getattr(f,fn) for fn in columns} for f in frames])
     vectorstrings = []
     for frame in frames:
+        print("Creating stringvector")
         # convert the imagevector into a string suitable for storage in CSV
         vs = ','.join(str(e) for e in frame._vector)
         vectorstrings.append(vs)

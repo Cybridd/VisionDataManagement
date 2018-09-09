@@ -230,11 +230,11 @@
      <enum>QTabWidget::North</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="mainpage">
      <attribute name="title">
-      <string>Main</string>
+      <string>Webcam</string>
      </attribute>
      <widget class="QFrame" name="dataframe">
       <property name="geometry">
@@ -437,7 +437,7 @@
     </widget>
     <widget class="QWidget" name="focuspage">
      <attribute name="title">
-      <string>Focus</string>
+      <string>Main</string>
      </attribute>
      <widget class="QLabel" name="biglabel">
       <property name="geometry">

@@ -402,7 +402,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuEdit.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.maintabWidget.setCurrentIndex(0)
+        self.maintabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -420,12 +420,12 @@ class Ui_MainWindow(object):
         self.startButton.setText(_translate("MainWindow", "Play"))
         self.skipBackButton.setText(_translate("MainWindow", "..."))
         self.skipForwardButton.setText(_translate("MainWindow", "..."))
-        self.maintabWidget.setTabText(self.maintabWidget.indexOf(self.mainpage), _translate("MainWindow", "Main"))
+        self.maintabWidget.setTabText(self.maintabWidget.indexOf(self.mainpage), _translate("MainWindow", "Webcam"))
         self.pauseButton_2.setText(_translate("MainWindow", "Pause"))
         self.startButton_2.setText(_translate("MainWindow", "Play"))
         self.skipBackButton_2.setText(_translate("MainWindow", "..."))
         self.skipForwardButton_2.setText(_translate("MainWindow", "..."))
-        self.maintabWidget.setTabText(self.maintabWidget.indexOf(self.focuspage), _translate("MainWindow", "Focus"))
+        self.maintabWidget.setTabText(self.maintabWidget.indexOf(self.focuspage), _translate("MainWindow", "Main"))
         self.maintabWidget.setTabText(self.maintabWidget.indexOf(self.gallerypage), _translate("MainWindow", "Gallery"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuOpen.setTitle(_translate("MainWindow", "Open"))

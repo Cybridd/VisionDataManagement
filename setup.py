@@ -1,5 +1,7 @@
 import os
+import sys
 from setuptools import setup
+from setuptools.command.install import install
 
 def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
@@ -21,5 +23,16 @@ setup(
     "git+ssh://git@github.com/Pozimek/RetinaVision@1693fbcaad0813a0bc8937b6dd4288cbdd273e4c#egg=retinavision-0.9",
     "git://github.com/pyqt/python-qt5#egg=python-qt5",
     ],
+    cmdclass={
+        'install': PostInstallCommand,
+    },
 )
-#@1693fbcaad0813a0bc8937b6dd4288cbdd273e4c
+
+class PostInstallCommand(install):
+    """Tasks to perform after installation"""
+    def run(self):
+        if os.name == 'nt':
+            try:
+                sys.path.index(sys.path.join(os.environ["ProgramFiles"],"NVIDIA CORPORATION","NVSMI"))
+            except ValueError:
+                sys.path.append(sys.path.join(os.environ["ProgramFiles"],"NVIDIA CORPORATION","NVSMI"))
