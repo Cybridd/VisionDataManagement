@@ -1,0 +1,12 @@
+# Do not include pycache or .pyc files
+__pycache__/
+*.pyc
+
+# Do not include temporary test files
+createtestfiles.py
+createfigureimages.py
+testdata/
+
+visiondatamanagement.egg-info/
+build/
+dist/
